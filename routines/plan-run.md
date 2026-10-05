@@ -25,8 +25,9 @@ via the Slack DM below. Never print secrets. Never commit or push.
       title, start, end, `timeZone: Europe/Berlin`, description `[jeeves]` (append the task's
       Notion URL unless `private` is true), and `visibility: private` when `private` is true.
 8. Call `apply_writes` with `plan_writes` (one call). If any task, calendar or plan write
-   failed, follow with an `update` of today's Daily Plan row setting `Run status` to
-   `Degraded` and `Run note` to a one-line summary of the failures.
+   failed, follow with an `update` of today's Daily Plan row with properties
+   `{"Run status": {"select": {"name": "Degraded"}}, "Run note": {"rich_text": [{"text":
+   {"content": "<one-line summary of the failures>"}}]}}`.
 9. If `status` is `planned`, send the DM (below) with `dm_text`, then a blank line and the
    Daily Plan row URL. In propose-only mode prefix the text with "(trial – nothing was
    changed) ". If `status` is `locked`, send nothing.
@@ -40,7 +41,8 @@ Zapier connector `execute_zapier_write_action`: `selected_api` `SlackCLIAPI`, `a
 
 ## Failure
 If a connector fails or step 3 fails twice: stop applying anything further. Create or
-update today's Daily Plan row (`Date` = today) with `Run status` `Failed` and `Run note`
-naming the failing step and error, then DM: "⚠️ Jeeves couldn't finish this morning's plan
+update today's Daily Plan row (create it with `{"Date": {"title": [{"text": {"content":
+"<YYYY-MM-DD>"}}]}}` if missing) with `{"Run status": {"select": {"name": "Failed"}}, "Run
+note": {"rich_text": [{"text": {"content": "<failing step and error>"}}]}}`, then DM: "⚠️ Jeeves couldn't finish this morning's plan
 (<step>). Yesterday's plan still stands — run /start-day to plan live." If the DM fails
 too, the row is the record.
