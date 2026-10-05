@@ -82,4 +82,6 @@ def test_writes_command_uses_mode_from_preferences(tmp_path, capsys):
     assert main(args) == 0
     out = json.loads(capsys.readouterr().out)
     assert out["task_writes"] == []
-    assert out["plan_writes"][0]["properties"]["Run status"] == "Proposed"
+    assert out["plan_writes"][0]["properties"]["Run status"] == {
+        "select": {"name": "Proposed"}
+    }

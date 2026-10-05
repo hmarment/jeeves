@@ -22,12 +22,18 @@ def test_task_changes_are_grouped_per_task_with_notion_names():
         {
             "op": "update",
             "page_id": "t1",
-            "properties": {"Due": "2026-10-07", "Original due": "2026-10-02"},
+            "properties": {
+                "Due": {"date": {"start": "2026-10-07"}},
+                "Original due": {"date": {"start": "2026-10-02"}},
+            },
         },
         {
             "op": "update",
             "page_id": "t2",
-            "properties": {"Status": "Not Started", "Planned by PA": None},
+            "properties": {
+                "Status": {"status": {"name": "Not Started"}},
+                "Planned by PA": {"date": None},
+            },
         },
     ]
 
@@ -73,18 +79,18 @@ def test_auto_mode_applies_tasks_and_updates_existing_rows():
     )
     out = build_writes(snapshot, result(), plan_rows(), "db", "auto")
     assert out["task_writes"] == [
-        [{"op": "update", "page_id": "t1", "properties": {"Deferrals": 1}}]
+        [{"op": "update", "page_id": "t1", "properties": {"Deferrals": {"number": 1}}}]
     ]
     today, body, yesterday = out["plan_writes"]
     assert today["op"] == "update" and today["page_id"] == "row-t"
-    assert today["properties"]["Run status"] == "OK"
-    assert today["properties"]["Must-dos"] == ["t1"]
+    assert today["properties"]["Run status"] == {"select": {"name": "OK"}}
+    assert today["properties"]["Must-dos"] == {"relation": [{"id": "t1"}]}
     assert body["op"] == "replace_body" and body["page_id"] == "row-t"
     assert "- A: Deferrals 0 → 1 (planned 2026-10-06, not done)" in body["body_lines"]
     assert yesterday == {
         "op": "update",
         "page_id": "row-y",
-        "properties": {"Must-dos completed": 1},
+        "properties": {"Must-dos completed": {"number": 1}},
     }
 
 
@@ -94,18 +100,20 @@ def test_propose_only_writes_no_tasks_and_labels_the_log():
     assert out["task_writes"] == []
     create = out["plan_writes"][0]
     assert create["op"] == "create" and create["database_id"] == "db"
-    assert create["properties"]["Date"] == "2026-10-07"
-    assert create["properties"]["Run status"] == "Proposed"
+    assert create["properties"]["Date"] == {
+        "title": [{"text": {"content": "2026-10-07"}}]
+    }
+    assert create["properties"]["Run status"] == {"select": {"name": "Proposed"}}
     assert create["body_lines"][0] == "## Would change (trial – nothing applied)"
     assert any("Focus block 09:00–10:30" in line for line in create["body_lines"])
 
 
-def test_task_writes_are_chunked_by_forty():
+def test_task_writes_are_chunked_by_ten():
     tasks = [make_task(f"t{i}") for i in range(45)]
     changes = [change(f"t{i}", "size", None, "S") for i in range(45)]
     snapshot = make_snapshot(tasks)
     out = build_writes(snapshot, result(changes=changes), {"pages": []}, "db", "auto")
-    assert [len(chunk) for chunk in out["task_writes"]] == [40, 5]
+    assert [len(chunk) for chunk in out["task_writes"]] == [10, 10, 10, 10, 5]
 
 
 def test_locked_result_only_updates_counts():
@@ -118,7 +126,10 @@ def test_locked_result_only_updates_counts():
             {
                 "op": "update",
                 "page_id": "row-t",
-                "properties": {"Hard-overdue count": 3, "Deferral-limit count": 1},
+                "properties": {
+                    "Hard-overdue count": {"number": 3},
+                    "Deferral-limit count": {"number": 1},
+                },
             }
         ],
     }
@@ -136,4 +147,16 @@ def test_backlog_review_is_written_to_the_plan_row():
     out = build_writes(
         snapshot, result(review_ids=["p9"]), {"pages": []}, "db", "propose-only"
     )
-    assert out["plan_writes"][0]["properties"]["Backlog review"] == ["p9"]
+    assert out["plan_writes"][0]["properties"]["Backlog review"] == {
+        "relation": [{"id": "p9"}]
+    }
+
+
+def test_every_value_type_is_encoded():
+    from jeeves.writes import encode
+
+    assert encode("Size", "S") == {"select": {"name": "S"}}
+    assert encode("Size", None) == {"select": None}
+    assert encode("Confidential", True) == {"checkbox": True}
+    assert encode("Run note", "boom") == {"rich_text": [{"text": {"content": "boom"}}]}
+    assert encode("Run note", None) == {"rich_text": []}

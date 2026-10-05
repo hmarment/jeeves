@@ -45,8 +45,10 @@ to `prefs.txt`; `jeeves snapshot --prefs prefs.txt` extracts the JSON settings b
 - `{"op":"create","database_id":"…","properties":{…},"body_lines":["## h","- bullet","text"]}`
 - `{"op":"replace_body","page_id":"…","body_lines":[…]}`
 
-Values: dates `"YYYY-MM-DD"`; `null` clears a date/number/select; relations are id lists;
-checkboxes true/false. Send at most 40 items per call. The response has one
+Properties are **Notion API property values** (e.g. `{"select": {"name": "S"}}`,
+`{"date": {"start": "2026-10-07"}}`), passed through unchanged — build them with
+`jeeves writes`, never by hand. Send at most 10 items per call; items the action skips for
+time come back as `not attempted (time budget)` and must be resent. The response has one
 `{index, ok, page_id, url, error}` per item; treat `ok:false` as that change failing and
 record it in the run's change log. Items run in order; one failure doesn't stop the rest.
 

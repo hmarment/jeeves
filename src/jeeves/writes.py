@@ -18,11 +18,60 @@ NOTION_NAMES = {
     "planned_by_pa": "Planned by PA",
     "last_reviewed": "Last reviewed",
 }
-BATCH_SIZE = 40
+PROPERTY_TYPES = {
+    "Status": "status",
+    "Due": "date",
+    "Original due": "date",
+    "Last deferred": "date",
+    "Planned by PA": "date",
+    "Last reviewed": "date",
+    "Priority": "select",
+    "Size": "select",
+    "Deadline type": "select",
+    "Area": "select",
+    "Run status": "select",
+    "Confidential": "checkbox",
+    "Ritual done": "checkbox",
+    "Shutdown done": "checkbox",
+    "Deferrals": "number",
+    "Focus minutes": "number",
+    "Must-dos completed": "number",
+    "Hard-overdue count": "number",
+    "Deferral-limit count": "number",
+    "Must-dos": "relation",
+    "Quick wins": "relation",
+    "Decision queue": "relation",
+    "Backlog review": "relation",
+    "Date": "title",
+    "Run note": "rich_text",
+}
+BATCH_SIZE = 10
 
 
 def _value(value: Any) -> Any:
     return value.isoformat() if isinstance(value, date) else value
+
+
+def _text(value: Any) -> list[dict]:
+    return [] if value is None else [{"text": {"content": str(value)}}]
+
+
+def encode(name: str, value: Any) -> dict:
+    kind = PROPERTY_TYPES[name]
+    value = _value(value)
+    if kind in ("select", "status"):
+        return {kind: None if value is None else {"name": value}}
+    if kind == "date":
+        return {"date": None if value is None else {"start": value}}
+    if kind == "relation":
+        return {"relation": [{"id": item} for item in value]}
+    if kind in ("title", "rich_text"):
+        return {kind: _text(value)}
+    return {kind: value}
+
+
+def _encode_all(properties: dict[str, Any]) -> dict[str, dict]:
+    return {name: encode(name, value) for name, value in properties.items()}
 
 
 def task_writes(changes: list[FieldChange]) -> list[dict]:
@@ -31,7 +80,7 @@ def task_writes(changes: list[FieldChange]) -> list[dict]:
         properties = by_task.setdefault(item.task_id, {})
         properties[NOTION_NAMES[item.field]] = _value(item.new)
     return [
-        {"op": "update", "page_id": task_id, "properties": properties}
+        {"op": "update", "page_id": task_id, "properties": _encode_all(properties)}
         for task_id, properties in by_task.items()
     ]
 
@@ -89,7 +138,13 @@ def build_writes(
     }
     if result.status == "locked":
         plan_writes = (
-            [{"op": "update", "page_id": rows[today], "properties": counts}]
+            [
+                {
+                    "op": "update",
+                    "page_id": rows[today],
+                    "properties": _encode_all(counts),
+                }
+            ]
             if today in rows
             else []
         )
@@ -97,16 +152,18 @@ def build_writes(
 
     updates = task_writes(result.changes) if mode == "auto" else []
     chunks = [updates[i : i + BATCH_SIZE] for i in range(0, len(updates), BATCH_SIZE)]
-    properties = {
-        "Date": today,
-        "Focus minutes": result.focus_minutes,
-        "Must-dos": result.must_do_ids,
-        "Quick wins": result.quick_win_ids,
-        "Decision queue": result.queue_ids,
-        "Backlog review": result.review_ids,
-        **counts,
-        "Run status": "OK" if mode == "auto" else "Proposed",
-    }
+    properties = _encode_all(
+        {
+            "Date": today,
+            "Focus minutes": result.focus_minutes,
+            "Must-dos": result.must_do_ids,
+            "Quick wins": result.quick_win_ids,
+            "Decision queue": result.queue_ids,
+            "Backlog review": result.review_ids,
+            **counts,
+            "Run status": "OK" if mode == "auto" else "Proposed",
+        }
+    )
     body = _log_lines(snapshot, result, mode)
     if today in rows:
         plan_writes = [
@@ -132,7 +189,9 @@ def build_writes(
             {
                 "op": "update",
                 "page_id": rows[yesterday.day.isoformat()],
-                "properties": {"Must-dos completed": result.yesterday_completed},
+                "properties": _encode_all(
+                    {"Must-dos completed": result.yesterday_completed}
+                ),
             }
         )
     return {"task_writes": chunks, "plan_writes": plan_writes}
