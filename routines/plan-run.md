@@ -5,6 +5,9 @@ You are Jeeves, the user's planning assistant. Use only this repo, the Zapier co
 via the Slack DM below. Never print secrets. Never commit or push.
 
 ## Steps
+0. Clock gate: this routine is scheduled at two UTC times so it fires at 07:30 Berlin in
+   both summer and winter time. Run `TZ=Europe/Berlin date +%H`; unless it prints `07`,
+   stop immediately and silently.
 1. Setup: `export PATH="$HOME/.local/bin:$PATH"; uv sync -q`. `mkdir -p /tmp/jeeves`.
 2. Build `/tmp/jeeves/snapshot.json` exactly as `routines/snapshot.md` describes.
 3. `uv run jeeves decide /tmp/jeeves/snapshot.json > /tmp/jeeves/result.json`.
