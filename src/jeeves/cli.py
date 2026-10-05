@@ -5,11 +5,12 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from jeeves.model import Snapshot
+from jeeves.model import PlanResult, Snapshot
 from jeeves.plan import decide
 from jeeves.reset import propose_reset
 from jeeves.skills_build import build
 from jeeves.snapshot import build_snapshot
+from jeeves.writes import build_writes
 
 COMMANDS = {"decide": decide, "reset": propose_reset}
 
@@ -39,6 +40,20 @@ def _snapshot(args: argparse.Namespace) -> int:
     return 0
 
 
+def _writes(args: argparse.Namespace) -> int:
+    try:
+        snapshot = Snapshot.model_validate_json(args.snapshot.read_text())
+        result = PlanResult.model_validate_json(args.result.read_text())
+    except ValidationError as error:
+        print(error, file=sys.stderr)
+        return 2
+    writes = build_writes(
+        snapshot, result, _load(args.daily_plan), args.database_id, snapshot.prefs.mode
+    )
+    print(json.dumps(writes, ensure_ascii=False, indent=2))
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="jeeves")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -50,6 +65,10 @@ def main(argv: list[str] | None = None) -> int:
         snapshot_parser.add_argument(flag, type=Path, required=True)
     snapshot_parser.add_argument("--inferences", type=Path)
     snapshot_parser.add_argument("--now", required=True)
+    writes_parser = commands.add_parser("writes")
+    for flag in ("--snapshot", "--result", "--daily-plan"):
+        writes_parser.add_argument(flag, type=Path, required=True)
+    writes_parser.add_argument("--database-id", required=True)
     args = parser.parse_args(argv)
     if args.command == "build-skills":
         for path in build(
@@ -59,6 +78,8 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "snapshot":
         return _snapshot(args)
+    if args.command == "writes":
+        return _writes(args)
     try:
         snapshot = Snapshot.model_validate_json(args.snapshot.read_text())
     except ValidationError as error:

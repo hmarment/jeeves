@@ -60,3 +60,26 @@ def test_snapshot_command_writes_valid_snapshot(tmp_path, capsys):
     snapshot = json.loads(capsys.readouterr().out)
     assert snapshot["prefs"]["mode"] == "auto"
     assert snapshot["inferences"]["p1"]["size"] == "S"
+
+
+def test_writes_command_uses_mode_from_preferences(tmp_path, capsys):
+    snapshot = make_snapshot([make_task()])
+    (tmp_path / "snapshot.json").write_text(snapshot.model_dump_json())
+    assert main(["decide", str(tmp_path / "snapshot.json")]) == 0
+    (tmp_path / "result.json").write_text(capsys.readouterr().out)
+    (tmp_path / "plan.json").write_text('{"pages": []}')
+    args = [
+        "writes",
+        "--snapshot",
+        str(tmp_path / "snapshot.json"),
+        "--result",
+        str(tmp_path / "result.json"),
+        "--daily-plan",
+        str(tmp_path / "plan.json"),
+        "--database-id",
+        "db",
+    ]
+    assert main(args) == 0
+    out = json.loads(capsys.readouterr().out)
+    assert out["task_writes"] == []
+    assert out["plan_writes"][0]["properties"]["Run status"] == "Proposed"
