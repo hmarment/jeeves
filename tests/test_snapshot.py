@@ -188,3 +188,8 @@ def test_build_snapshot_picks_today_and_latest_earlier_plan():
     assert snapshot.today_plan.ritual_done
     assert snapshot.inferences["p1"].size == "S"
     assert json.loads(snapshot.model_dump_json())["tasks"][0]["id"] == "p1"
+
+
+def test_last_reviewed_is_mapped():
+    task = task_from_page(notion_task(**{"Last reviewed": "2026-09-28"}))
+    assert task.last_reviewed == date(2026, 9, 28)

@@ -129,3 +129,11 @@ def test_skipped_result_writes_nothing():
         make_snapshot([]), PlanResult(status="skipped"), plan_rows(), "db", "auto"
     )
     assert out == {"task_writes": [], "plan_writes": []}
+
+
+def test_backlog_review_is_written_to_the_plan_row():
+    snapshot = make_snapshot([make_task("t1", title="A")])
+    out = build_writes(
+        snapshot, result(review_ids=["p9"]), {"pages": []}, "db", "propose-only"
+    )
+    assert out["plan_writes"][0]["properties"]["Backlog review"] == ["p9"]

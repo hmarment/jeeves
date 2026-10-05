@@ -25,7 +25,7 @@ with your integration" error means it isn't.
 - `database_id` = `$JEEVES_TASKS_DB`
 - `filter_json` = `{"or":[{"property":"Status","status":{"equals":"<S>"}}, ...]}` for each status
 - `page_ids` = extra_ids joined by commas (may be empty)
-- `properties` = `Task name,Status,Due,Original due,Priority,Size,Deadline type,Area,Confidential,Deferrals,Last deferred,Planned by PA,Summary,Project Name,Project Category,Created time,Last edited time`
+- `properties` = `Task name,Status,Due,Original due,Priority,Size,Deadline type,Area,Confidential,Deferrals,Last deferred,Planned by PA,Last reviewed,Summary,Project Name,Project Category,Created time,Last edited time`
 
 Returns `{"pages":[{id,url,created_time,last_edited_time,properties:{...}}],"count":N}`.
 Values are flat: text, select/status name, date start (may be a UTC datetime — convert to

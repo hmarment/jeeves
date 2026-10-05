@@ -61,6 +61,7 @@ def task_from_page(page: dict) -> Task:
         deferrals=int(props.get("Deferrals") or 0),
         last_deferred=berlin_date(props.get("Last deferred")),
         planned_by_pa=berlin_date(props.get("Planned by PA")),
+        last_reviewed=berlin_date(props.get("Last reviewed")),
         rock_linked=any("Rock" in str(name) for name in projects),
     )
 

@@ -16,6 +16,7 @@ NOTION_NAMES = {
     "deferrals": "Deferrals",
     "last_deferred": "Last deferred",
     "planned_by_pa": "Planned by PA",
+    "last_reviewed": "Last reviewed",
 }
 BATCH_SIZE = 40
 
@@ -102,6 +103,7 @@ def build_writes(
         "Must-dos": result.must_do_ids,
         "Quick wins": result.quick_win_ids,
         "Decision queue": result.queue_ids,
+        "Backlog review": result.review_ids,
         **counts,
         "Run status": "OK" if mode == "auto" else "Proposed",
     }

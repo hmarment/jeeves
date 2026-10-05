@@ -44,6 +44,7 @@ class Task(Frozen):
     deferrals: int = 0
     last_deferred: date | None = None
     planned_by_pa: date | None = None
+    last_reviewed: date | None = None
     rock_linked: bool = False
 
     @property
@@ -98,6 +99,7 @@ class Preferences(Frozen):
     stale_days: int = 45
     recent_soft_days: int = 30
     week_ahead_working_days: int = 5
+    backlog_review_count: int = 3
     ooo_keywords: list[str] = ["OOO", "Out of office", "Holiday", "Urlaub", "Vacation"]
     confidential_keywords: list[str] = [
         "hiring",
@@ -176,6 +178,7 @@ class PlanResult(Frozen):
     must_do_ids: list[str] = []
     quick_win_ids: list[str] = []
     queue_ids: list[str] = []
+    review_ids: list[str] = []
     changes: list[FieldChange] = []
     blocks_create: list[BlockCreate] = []
     blocks_delete: list[BlockDelete] = []

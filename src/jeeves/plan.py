@@ -15,6 +15,7 @@ from jeeves.model import (
     apply_changes,
 )
 from jeeves.queue import decision_queue, queue_candidates
+from jeeves.review import backlog_review, is_first_planned_day_of_week
 from jeeves.selection import select
 from jeeves.today import today_changes
 from jeeves.workday import (
@@ -85,6 +86,11 @@ def decide(snapshot: Snapshot) -> PlanResult:
         must_do_ids=selection.must_do_ids,
         quick_win_ids=selection.quick_win_ids,
         queue_ids=queue,
+        review_ids=(
+            backlog_review(tasks, prefs)
+            if is_first_planned_day_of_week(today, snapshot.yesterday_plan)
+            else []
+        ),
         changes=changes,
         blocks_create=plan_blocks(
             must_dos, bool(selection.quick_win_ids), intervals, snapshot.now, prefs
