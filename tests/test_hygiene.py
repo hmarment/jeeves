@@ -127,3 +127,8 @@ def test_protected_task_never_gets_soft_written():
     task = make_task(title="JIRA | ASQ-1", deadline_type=None)
     changes = inference_changes([task], {"t1": Inference(deadline_type="Soft")})
     assert fields(changes) == {("t1", "deadline_type"): "Hard"}
+
+
+def test_backlog_tasks_are_parked_and_never_rolled():
+    task = make_task(status="Backlog", due=YESTERDAY)
+    assert soft_roll_changes([task], TODAY, set(), 3) == []

@@ -13,6 +13,7 @@ FieldValue = date | bool | int | str | None
 
 BERLIN = ZoneInfo("Europe/Berlin")
 PROTECTED_PREFIXES = ("90 |", "JIRA |")
+PARKED_STATUS = "Backlog"
 OPEN_STATUSES = frozenset({"Backlog", "Not Started", "Today", "In Progress", "Pending"})
 SELECTABLE_STATUSES = frozenset({"Not Started", "Today", "In Progress"})
 

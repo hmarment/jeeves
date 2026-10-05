@@ -91,3 +91,11 @@ def test_stale_pa_stamp_is_cleared_when_task_leaves_today():
     task = make_task(status="Pending", planned_by_pa=date(2026, 9, 30))
     result = decide(make_snapshot([task]))
     assert ("t1", "planned_by_pa") in {(c.task_id, c.field) for c in result.changes}
+
+
+def test_hard_overdue_in_backlog_does_not_count():
+    tasks = [
+        make_task("parked", status="Backlog", due=YESTERDAY, deadline_type="Hard"),
+        make_task("live", due=YESTERDAY, deadline_type="Hard"),
+    ]
+    assert decide(make_snapshot(tasks)).hard_overdue_count == 1

@@ -9,10 +9,10 @@ def fields(changes):
     return {(c.task_id, c.field): c.new for c in changes}
 
 
-def test_stale_unproven_task_goes_to_someday_with_original_due_kept():
+def test_stale_unproven_task_goes_to_backlog_with_original_due_kept():
     task = make_task(due=date(2026, 6, 1), last_edited=date(2026, 7, 1))
     result = fields(propose_reset(make_snapshot([task])).changes)
-    assert result[("t1", "status")] == "Someday"
+    assert result[("t1", "status")] == "Backlog"
     assert result[("t1", "original_due")] == date(2026, 6, 1)
 
 
@@ -58,3 +58,10 @@ def test_inferences_are_part_of_the_proposal():
         [make_task(size=None)], inferences={"t1": Inference(size="S")}
     )
     assert fields(propose_reset(snapshot).changes)[("t1", "size")] == "S"
+
+
+def test_stale_task_already_in_backlog_keeps_its_status():
+    task = make_task(
+        status="Backlog", due=date(2026, 6, 1), last_edited=date(2026, 7, 1)
+    )
+    assert ("t1", "status") not in fields(propose_reset(make_snapshot([task])).changes)

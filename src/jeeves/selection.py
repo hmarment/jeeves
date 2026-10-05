@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from datetime import date
 
-from jeeves.model import SELECTABLE_STATUSES, Preferences, Task
+from jeeves.model import PARKED_STATUS, SELECTABLE_STATUSES, Preferences, Task
 
 PRIORITY_RANK = {"Very High": 0, "High": 1, "Medium": 2, "Low": 3, "Very Low": 4}
 
@@ -41,12 +41,18 @@ def _rank_key(task: Task, today: date, horizon_end: date) -> tuple:
     )
 
 
-def _is_candidate(task: Task, excluded: set[str], horizon_end: date) -> bool:
+def _is_candidate(
+    task: Task, excluded: set[str], today: date, horizon_end: date
+) -> bool:
     if task.id in excluded or task.size == "L":
         return False
     if task.status in SELECTABLE_STATUSES:
         return True
-    return task.status == "Backlog" and _is_hard(task) and task.due <= horizon_end
+    return (
+        task.status == PARKED_STATUS
+        and _is_hard(task)
+        and today <= task.due <= horizon_end
+    )
 
 
 def select(
@@ -58,7 +64,7 @@ def select(
     excluded: set[str],
 ) -> Selection:
     candidates = sorted(
-        (task for task in tasks if _is_candidate(task, excluded, horizon_end)),
+        (task for task in tasks if _is_candidate(task, excluded, today, horizon_end)),
         key=lambda task: _rank_key(task, today, horizon_end),
     )
     ordered = [t for t in candidates if t.is_manual_today] + [

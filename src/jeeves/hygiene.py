@@ -1,6 +1,6 @@
 from datetime import date
 
-from jeeves.model import FieldChange, Inference, Task, change
+from jeeves.model import PARKED_STATUS, FieldChange, Inference, Task, change
 
 INFERABLE_FIELDS = ("area", "size", "deadline_type")
 
@@ -67,6 +67,7 @@ def soft_roll_changes(
     for task in tasks:
         if (
             task.is_open
+            and task.status != PARKED_STATUS
             and task.effective_deadline_type == "Soft"
             and task.due is not None
             and task.due < today

@@ -5,6 +5,7 @@ from jeeves.deferrals import close_out_changes, planned_ids, yesterday_completed
 from jeeves.dm import render_dm
 from jeeves.hygiene import duplicate_changes, inference_changes, soft_roll_changes
 from jeeves.model import (
+    PARKED_STATUS,
     BlockDelete,
     FieldChange,
     PlanResult,
@@ -30,6 +31,7 @@ def _metrics(tasks: list[Task], today: date, prefs: Preferences) -> dict[str, in
             1
             for t in tasks
             if t.is_open
+            and t.status != PARKED_STATUS
             and t.effective_deadline_type == "Hard"
             and t.due is not None
             and t.due < today

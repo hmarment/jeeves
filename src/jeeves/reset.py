@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 from jeeves.hygiene import inference_changes
-from jeeves.model import ResetProposal, Snapshot, apply_changes, change
+from jeeves.model import PARKED_STATUS, ResetProposal, Snapshot, apply_changes, change
 
 
 def propose_reset(snapshot: Snapshot) -> ResetProposal:
@@ -24,8 +24,9 @@ def propose_reset(snapshot: Snapshot) -> ResetProposal:
         if task.effective_deadline_type == "Hard":
             continue
         if task.last_edited < stale_cutoff:
-            reason = f"backlog reset: untouched since {task.last_edited}"
-            changes.append(change(task, "status", "Someday", reason))
+            if task.status != PARKED_STATUS:
+                reason = f"backlog reset: untouched since {task.last_edited}"
+                changes.append(change(task, "status", PARKED_STATUS, reason))
         elif task.due is not None and task.last_edited < recent_cutoff:
             reason = "backlog reset: unproven date cleared (original kept)"
             changes.append(change(task, "due", None, reason))

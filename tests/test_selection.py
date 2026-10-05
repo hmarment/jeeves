@@ -89,3 +89,15 @@ def test_backlog_only_selected_for_near_hard_deadline():
         make_task("b2", status="Backlog", due=date(2026, 10, 9), deadline_type="Hard"),
     ]
     assert pick(tasks).must_do_ids == ["b2"]
+
+
+def test_parked_task_with_overdue_hard_date_is_left_parked():
+    tasks = [
+        make_task(
+            "stale", status="Backlog", due=date(2026, 5, 6), deadline_type="Hard"
+        ),
+        make_task(
+            "soon", status="Backlog", due=date(2026, 10, 9), deadline_type="Hard"
+        ),
+    ]
+    assert pick(tasks).must_do_ids == ["soon"]
