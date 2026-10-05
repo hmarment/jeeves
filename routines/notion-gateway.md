@@ -9,8 +9,14 @@ Zapier connector:
   (inputs: `database_id`, `filter_json`, `page_ids`, `properties`)
 - same, `action` = `code_action_notioncliapi__jeeves_apply` (input: `writes_json`)
 
-IDs come from environment variables: `JEEVES_TASKS_DB`, `JEEVES_DAILY_PLAN_DB`
-(and `JEEVES_SCRATCH_DB` for tests). Any page or database the gateway touches must be
+- same, `action` = `code_action_notioncliapi__jeeves_page_text` (input: `page_id`)
+
+IDs come from environment variables: `JEEVES_TASKS_DB`, `JEEVES_DAILY_PLAN_DB`,
+`JEEVES_PREFERENCES_PAGE` (and `JEEVES_SCRATCH_DB` for tests).
+
+Large results: when the connector says the result exceeds the token limit and saved it
+to a file, use that file path directly as the input to `jeeves snapshot`; it unwraps the
+Zapier envelope itself. Never paste large results into your reasoning. Any page or database the gateway touches must be
 shared with the "Zapier" Notion integration (⋯ → Connections); a 404 "make sure ... shared
 with your integration" error means it isn't.
 
@@ -28,6 +34,10 @@ the Europe/Berlin date), number, true/false, relation id list, rollup list.
 ## read_daily_plan(dates)
 `jeeves_query` with `database_id` = `$JEEVES_DAILY_PLAN_DB`,
 `filter_json` = `{"or":[{"property":"Date","title":{"equals":"<YYYY-MM-DD>"}}, ...]}`.
+
+## read_preferences()
+`jeeves_page_text` with `page_id` = `$JEEVES_PREFERENCES_PAGE`. Save the returned `text`
+to `prefs.txt`; `jeeves snapshot --prefs prefs.txt` extracts the JSON settings block.
 
 ## apply_writes(writes)
 `jeeves_apply` with `writes_json` = a JSON array of
