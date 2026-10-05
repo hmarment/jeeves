@@ -193,3 +193,33 @@ def test_build_snapshot_picks_today_and_latest_earlier_plan():
 def test_last_reviewed_is_mapped():
     task = task_from_page(notion_task(**{"Last reviewed": "2026-09-28"}))
     assert task.last_reviewed == date(2026, 9, 28)
+
+
+def test_unwrap_handles_saved_file_envelope_and_json_strings():
+    page = notion_task()
+    inner = json.dumps({"results": {"data": {"data": {"pages": [page], "count": 1}}}})
+    saved_file = [{"type": "text", "text": inner}]
+    assert unwrap_pages(saved_file) == [page]
+    assert unwrap_pages({"results": [{"data": {"pages": [page]}}]}) == [page]
+
+
+def test_payload_without_pages_is_an_error():
+    with pytest.raises(ValueError, match="no 'pages'"):
+        build_snapshot(
+            tasks_payload={"error": "404"},
+            plan_payload={"pages": []},
+            events_payload=[],
+            prefs_payload="```json\n{}\n```",
+            now="2026-10-07T05:30:00+00:00",
+        )
+
+
+def test_count_without_pages_is_an_error():
+    with pytest.raises(ValueError, match="count"):
+        build_snapshot(
+            tasks_payload={"pages": [], "count": 12},
+            plan_payload={"pages": []},
+            events_payload=[],
+            prefs_payload="```json\n{}\n```",
+            now="2026-10-07T05:30:00+00:00",
+        )

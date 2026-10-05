@@ -19,15 +19,39 @@ from jeeves.model import (
 JSON_BLOCK = re.compile(r"```(?:json)?\s*(\{.*?\})\s*```", re.DOTALL)
 
 
-def unwrap_pages(payload: Any) -> list[dict]:
+def _envelope(payload: Any) -> dict | None:
+    if isinstance(payload, str) and payload.lstrip()[:1] in ("{", "["):
+        try:
+            return _envelope(json.loads(payload))
+        except json.JSONDecodeError:
+            return None
     if isinstance(payload, dict):
         if isinstance(payload.get("pages"), list):
-            return payload["pages"]
-        for value in payload.values():
-            pages = unwrap_pages(value)
-            if pages:
-                return pages
-    return []
+            return payload
+        children = payload.values()
+    elif isinstance(payload, list):
+        children = payload
+    else:
+        return None
+    for child in children:
+        found = _envelope(child)
+        if found is not None:
+            return found
+    return None
+
+
+def unwrap_pages(payload: Any) -> list[dict]:
+    envelope = _envelope(payload)
+    return envelope["pages"] if envelope else []
+
+
+def _required_pages(payload: Any, label: str) -> list[dict]:
+    envelope = _envelope(payload)
+    if envelope is None:
+        raise ValueError(f"no 'pages' found in the {label} payload")
+    if envelope.get("count") and not envelope["pages"]:
+        raise ValueError(f"{label} payload has count {envelope['count']} but no pages")
+    return envelope["pages"]
 
 
 def berlin_date(value: str | None) -> date | None:
@@ -135,7 +159,7 @@ def build_snapshot(
     prefs = extract_preferences(prefs_payload)
     current = datetime.fromisoformat(now).astimezone(BERLIN)
     plans = sorted(
-        (plan_from_page(page) for page in unwrap_pages(plan_payload)),
+        (plan_from_page(page) for page in _required_pages(plan_payload, "daily plan")),
         key=lambda plan: plan.day,
     )
     today = current.date()
@@ -144,7 +168,9 @@ def build_snapshot(
     return Snapshot(
         now=current,
         prefs=prefs,
-        tasks=[task_from_page(page) for page in unwrap_pages(tasks_payload)],
+        tasks=[
+            task_from_page(page) for page in _required_pages(tasks_payload, "tasks")
+        ],
         events=[event for event in events if event is not None],
         yesterday_plan=earlier[-1] if earlier else None,
         today_plan=next((plan for plan in plans if plan.day == today), None),

@@ -6,14 +6,17 @@ Work in the cloned `jeeves` repo. All files go in `/tmp/jeeves/` (never commit t
 2. `read_daily_plan(dates)` for today and the previous 7 days (Europe/Berlin) →
    `/tmp/jeeves/plan.json`. Collect the task ids in Must-dos / Quick wins of those rows.
 3. `read_tasks(["Backlog","Not Started","Today","In Progress","Pending"], extra_ids)` with
-   the ids from step 2 → `/tmp/jeeves/tasks.json` (or the connector's saved file).
+   the ids from step 2 → `/tmp/jeeves/tasks.json`. If the connector saved the result to a
+   file, `cp` that file to `/tmp/jeeves/tasks.json` (any envelope is fine — `jeeves snapshot`
+   unwraps it). Same for `plan.json` in step 2.
 4. Google Calendar `list_events` on the primary calendar from today 00:00 to today + 8 days
    24:00, Europe/Berlin → write the raw event objects as a JSON list to
    `/tmp/jeeves/events.json`. Each needs `id`, `summary`, `start`, `end` (as Google returns
    them: `{"dateTime": …}` or `{"date": …}`), and when present `description`, `eventType`,
    `transparency`, `attendees` (with `self` and `responseStatus`). `jeeves snapshot` drops
    declined and free events and detects `[jeeves]` blocks and out-of-office itself.
-5. Inferences → `/tmp/jeeves/inferences.json` (rules below).
+5. Inferences → `/tmp/jeeves/inferences.json` (rules below). Always write the file — `{}`
+   when there is nothing to infer.
 6. ```bash
    uv run jeeves snapshot --tasks /tmp/jeeves/tasks.json --daily-plan /tmp/jeeves/plan.json \
      --events /tmp/jeeves/events.json --prefs /tmp/jeeves/prefs.txt \

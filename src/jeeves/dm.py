@@ -10,7 +10,8 @@ def render_dm(
         f"☀️ Plan for {day:%a %d %b} is ready: {focus // 60}h{focus % 60:02d} focus time."
     ]
     if first is not None:
-        lines.append(f"First must-do: {first.title}")
+        title = "(confidential)" if first.confidential else first.title
+        lines.append(f"First must-do: {title}")
     if queue_size:
         plural = "s" if queue_size != 1 else ""
         lines.append(f"{queue_size} decision{plural} waiting.")

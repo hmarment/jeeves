@@ -33,7 +33,7 @@ def _snapshot(args: argparse.Namespace) -> int:
             now=args.now,
             inferences_payload=_load(args.inferences) if args.inferences else None,
         )
-    except (ValidationError, ValueError, KeyError) as error:
+    except (ValidationError, ValueError, KeyError, OSError) as error:
         print(error, file=sys.stderr)
         return 2
     print(snapshot.model_dump_json(indent=2))

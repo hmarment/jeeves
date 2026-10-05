@@ -85,3 +85,21 @@ def test_writes_command_uses_mode_from_preferences(tmp_path, capsys):
     assert out["plan_writes"][0]["properties"]["Run status"] == {
         "select": {"name": "Proposed"}
     }
+
+
+def test_snapshot_command_missing_file_exits_2(tmp_path, capsys):
+    args = [
+        "snapshot",
+        "--tasks",
+        str(tmp_path / "nope.json"),
+        "--daily-plan",
+        str(tmp_path / "nope.json"),
+        "--events",
+        str(tmp_path / "nope.json"),
+        "--prefs",
+        str(tmp_path / "nope.json"),
+        "--now",
+        "2026-10-07T07:30:00+02:00",
+    ]
+    assert main(args) == 2
+    assert "nope.json" in capsys.readouterr().err

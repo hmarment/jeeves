@@ -14,3 +14,9 @@ def test_dm_flags_over_capacity_and_handles_empty_plan():
     text = render_dm(TODAY, 60, None, 1, 45)
     assert "Over capacity by 45 min" in text
     assert "1 decision waiting" in text
+
+
+def test_dm_hides_confidential_title():
+    text = render_dm(TODAY, 60, make_task(title="Hire CRO", confidential=True), 0, 0)
+    assert "Hire CRO" not in text
+    assert "(confidential)" in text
