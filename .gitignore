@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+dist/
+*.snapshot.json
+snapshot.json
+result.json
+.superpowers/

@@ -1,0 +1,31 @@
+[project]
+name = "jeeves"
+version = "0.1.0"
+description = "Deterministic daily-planning core for a personal-assistant agent"
+readme = "README.md"
+authors = [{ name = "Henry Marment" }]
+requires-python = ">=3.12"
+dependencies = [
+    "pydantic>=2.13.5",
+]
+
+[project.scripts]
+jeeves = "jeeves.cli:main"
+
+[build-system]
+requires = ["uv_build>=0.12.5,<0.13.0"]
+build-backend = "uv_build"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 88
+extend-exclude = ["docs"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "ruff>=0.16.10",
+]
