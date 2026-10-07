@@ -41,7 +41,9 @@ Zapier connector `execute_zapier_write_action`: `selected_api` `SlackCLIAPI`, `a
 "icon": ":tophat:"}}` (substitute the env value for `$JEEVES_SLACK_USER`).
 
 ## Failure
-If a connector fails or step 3 fails twice: stop applying anything further. Create or
+If anything after the clock gate stops the run — a connector fails, a command errors or is
+denied by a permission check, a required env var is missing, or step 3 fails twice — stop
+applying anything further. A push notification alone is not enough: always send the DM. Create or
 update today's Daily Plan row (create it with `{"Date": {"title": [{"text": {"content":
 "<YYYY-MM-DD>"}}]}}` if missing) with `{"Run status": {"select": {"name": "Failed"}}, "Run
 note": {"rich_text": [{"text": {"content": "<failing step and error>"}}]}}`, then DM: "⚠️ Jeeves couldn't finish this morning's plan
