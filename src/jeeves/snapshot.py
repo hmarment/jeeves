@@ -106,7 +106,7 @@ def plan_from_page(page: dict) -> DailyPlanState:
 def _google_time(value: dict) -> tuple[datetime, bool]:
     if "date" in value:
         return datetime.combine(
-            date.fromisoformat(value["date"]), datetime.min.time(), BERLIN
+            date.fromisoformat(value["date"][:10]), datetime.min.time(), BERLIN
         ), True
     return datetime.fromisoformat(value["dateTime"]), False
 

@@ -247,3 +247,14 @@ def test_pa_block_typed_focus_time_is_not_flagged():
     raw = {**_focus_event("🎯 Focus: x"), "description": "[jeeves]"}
     event = event_from_google(raw, Preferences())
     assert event.pa_created and not event.focus_time
+
+
+def test_all_day_date_with_time_suffix_is_accepted():
+    raw = {
+        "id": "h",
+        "summary": "Holiday",
+        "start": {"date": "2026-10-09T00:00:00Z"},
+        "end": {"date": "2026-10-10T00:00:00Z"},
+    }
+    event = event_from_google(raw, Preferences())
+    assert event.all_day and event.start.date() == date(2026, 10, 9)
