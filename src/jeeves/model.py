@@ -96,6 +96,7 @@ class Preferences(Frozen):
     quick_wins_minutes: int = 30
     quick_wins_start: time = time(13, 30)
     deferral_limit: int = 3
+    stale_today_days: int = 3
     queue_cap: int = 5
     stale_days: int = 45
     recent_soft_days: int = 30

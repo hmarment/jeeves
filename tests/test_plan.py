@@ -99,3 +99,13 @@ def test_hard_overdue_in_backlog_does_not_count():
         make_task("live", due=YESTERDAY, deadline_type="Hard"),
     ]
     assert decide(make_snapshot(tasks)).hard_overdue_count == 1
+
+
+def test_stale_manual_today_does_not_take_a_slot():
+    tasks = [
+        make_task("stale", status="Today", last_edited=date(2026, 9, 20)),
+        make_task("prio", priority="High"),
+    ]
+    result = decide(make_snapshot(tasks))
+    assert "stale" not in result.must_do_ids
+    assert "stale" in result.queue_ids

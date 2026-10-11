@@ -67,11 +67,11 @@ def decide(snapshot: Snapshot) -> PlanResult:
     run(duplicates)
     completed = yesterday_completed(tasks, snapshot.yesterday_plan)
     run(close_out_changes(tasks, snapshot.yesterday_plan, today, prefs.deferral_limit))
-    frozen = set(queue_candidates(tasks, uncertain, prefs))
+    frozen = set(queue_candidates(tasks, uncertain, prefs, today))
     skip = planned_ids(snapshot.yesterday_plan) | frozen
     run(soft_roll_changes(tasks, today, skip, prefs.deferral_limit))
 
-    queue = decision_queue(tasks, uncertain, prefs)
+    queue = decision_queue(tasks, uncertain, prefs, today)
     horizon_end = working_days_ahead(today, prefs.week_ahead_working_days, events)[-1]
     intervals = free_intervals(snapshot.now, events, prefs)
     focus = focus_minutes(intervals)
