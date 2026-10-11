@@ -58,3 +58,9 @@ def test_stale_manual_today_is_queued_but_fresh_and_pa_ones_are_not():
         ),
     ]
     assert decision_queue(tasks, [], Preferences(), TODAY) == ["stale"]
+
+
+def test_manual_today_from_thursday_is_fresh_on_monday():
+    monday = date(2026, 10, 12)
+    task = make_task("thu", status="Today", last_edited=date(2026, 10, 8))
+    assert decision_queue([task], [], Preferences(), monday) == []

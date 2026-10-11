@@ -33,6 +33,14 @@ def working_days_ahead(
     return days
 
 
+def working_days_since(start: date, end: date, events: list[CalendarEvent]) -> int:
+    return sum(
+        1
+        for offset in range(1, (end - start).days + 1)
+        if is_working_day(start + timedelta(days=offset), events)
+    )
+
+
 def free_intervals(
     now: datetime, events: list[CalendarEvent], prefs: Preferences
 ) -> list[Interval]:

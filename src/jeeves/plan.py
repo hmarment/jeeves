@@ -14,7 +14,7 @@ from jeeves.model import (
     Task,
     apply_changes,
 )
-from jeeves.queue import decision_queue, queue_candidates
+from jeeves.queue import decision_queue, frozen_ids
 from jeeves.review import backlog_review, is_first_planned_day_of_week
 from jeeves.selection import select
 from jeeves.today import today_changes
@@ -67,11 +67,11 @@ def decide(snapshot: Snapshot) -> PlanResult:
     run(duplicates)
     completed = yesterday_completed(tasks, snapshot.yesterday_plan)
     run(close_out_changes(tasks, snapshot.yesterday_plan, today, prefs.deferral_limit))
-    frozen = set(queue_candidates(tasks, uncertain, prefs, today))
+    frozen = frozen_ids(tasks, uncertain, prefs, today, events)
     skip = planned_ids(snapshot.yesterday_plan) | frozen
     run(soft_roll_changes(tasks, today, skip, prefs.deferral_limit))
 
-    queue = decision_queue(tasks, uncertain, prefs, today)
+    queue = decision_queue(tasks, uncertain, prefs, today, events)
     horizon_end = working_days_ahead(today, prefs.week_ahead_working_days, events)[-1]
     intervals = free_intervals(snapshot.now, events, prefs)
     focus = focus_minutes(intervals)

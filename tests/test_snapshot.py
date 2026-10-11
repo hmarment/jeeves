@@ -258,3 +258,11 @@ def test_all_day_date_with_time_suffix_is_accepted():
     }
     event = event_from_google(raw, Preferences())
     assert event.all_day and event.start.date() == date(2026, 10, 9)
+
+
+def test_declined_focus_time_event_is_still_dropped():
+    raw = {
+        **_focus_event("Deep Work"),
+        "attendees": [{"self": True, "responseStatus": "declined"}],
+    }
+    assert event_from_google(raw, Preferences()) is None

@@ -109,3 +109,13 @@ def test_stale_manual_today_does_not_take_a_slot():
     result = decide(make_snapshot(tasks))
     assert "stale" not in result.must_do_ids
     assert "stale" in result.queue_ids
+
+
+def test_stale_manual_today_beyond_the_queue_cap_keeps_its_forced_place():
+    tasks = [
+        make_task(f"q{i}", deferrals=3, created=date(2026, 8, i + 1)) for i in range(5)
+    ]
+    tasks.append(make_task("mine", status="Today", last_edited=date(2026, 9, 20)))
+    result = decide(make_snapshot(tasks))
+    assert "mine" not in result.queue_ids
+    assert "mine" in result.must_do_ids
