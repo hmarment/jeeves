@@ -24,7 +24,11 @@ via the Slack DM below. Never print secrets. Never commit or push.
    b. For each `blocks_create` entry: `create_event` on the primary calendar with its
       title, start, end, `timeZone: Europe/Berlin`, description `[jeeves]` (append the task's
       Notion URL unless `private` is true), and `visibility: private` when `private` is true.
-8. Call `apply_writes` with `plan_writes` (one call). If the Daily Plan row `create` (or
+8. Call `apply_writes` with `plan_writes` (one call), exactly as `jeeves writes` produced
+   it: never shorten, summarise or rewrite `body_lines` — the body is the change log and
+   the only undo record. If the call is too large, split it: send the row `create` without
+   `body_lines` (or the `update` alone), then `{"op":"replace_body","page_id":<row id>,
+   "body_lines":<the unchanged lines>}` as its own call. If the Daily Plan row `create` (or
    its `update`) itself failed, go to **Failure**. Otherwise, if any task, calendar or body
    write failed, follow with an `update` of today's Daily Plan row with properties
    `{"Run status": {"select": {"name": "Degraded"}}, "Run note": {"rich_text": [{"text":

@@ -160,3 +160,43 @@ def test_every_value_type_is_encoded():
     assert encode("Confidential", True) == {"checkbox": True}
     assert encode("Run note", "boom") == {"rich_text": [{"text": {"content": "boom"}}]}
     assert encode("Run note", None) == {"rich_text": []}
+
+
+def _body(snapshot, changes):
+    out = build_writes(
+        snapshot,
+        PlanResult(status="planned", changes=changes),
+        {"pages": []},
+        "db",
+        "auto",
+    )
+    return out["plan_writes"][0]["body_lines"]
+
+
+def test_log_has_one_line_per_task_with_old_and_new():
+    snapshot = make_snapshot([make_task("a", title="Alpha")])
+    lines = _body(
+        snapshot,
+        [
+            change("a", "size", None, "M", "inferred"),
+            change("a", "area", None, "Work", "inferred"),
+            change("a", "due", date(2026, 10, 1), TODAY, "soft date passed"),
+        ],
+    )
+    assert lines[1] == (
+        "- Alpha: Size – → M; Area – → Work; Due 2026-10-01 → 2026-10-07 "
+        "(inferred; soft date passed)"
+    )
+    assert lines[2] == "## Calendar"
+
+
+def test_log_hides_confidential_titles():
+    snapshot = make_snapshot([make_task("c", title="Comp band", confidential=True)])
+    lines = _body(snapshot, [change("c", "size", None, "S", "inferred")])
+    assert lines[1] == "- 🔒 confidential task: Size – → S (inferred)"
+
+
+def test_log_hides_title_of_task_inferred_confidential():
+    snapshot = make_snapshot([make_task("c", title="Salary review", size=None)])
+    lines = _body(snapshot, [change("c", "confidential", False, True, "inferred")])
+    assert "Salary review" not in "\n".join(lines)

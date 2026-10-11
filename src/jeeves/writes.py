@@ -1,7 +1,7 @@
 from datetime import date
 from typing import Any
 
-from jeeves.model import FieldChange, PlanResult, Snapshot
+from jeeves.model import FieldChange, PlanResult, Snapshot, Task
 from jeeves.snapshot import unwrap_pages
 
 NOTION_NAMES = {
@@ -89,19 +89,37 @@ def _show(value: Any) -> str:
     return "–" if value is None else str(_value(value))
 
 
+def _log_title(task: Task | None, task_id: str, items: list[FieldChange]) -> str:
+    if task is None:
+        return task_id
+    becomes_confidential = any(
+        i.field == "confidential" and i.new is True for i in items
+    )
+    return (
+        "🔒 confidential task"
+        if task.confidential or becomes_confidential
+        else task.title
+    )
+
+
 def _log_lines(snapshot: Snapshot, result: PlanResult, mode: str) -> list[str]:
-    titles = {task.id: task.title for task in snapshot.tasks}
+    tasks = {task.id: task for task in snapshot.tasks}
     heading = (
         "## Change log"
         if mode == "auto"
         else "## Would change (trial – nothing applied)"
     )
     lines = [heading]
+    grouped: dict[str, list[FieldChange]] = {}
     for item in result.changes:
-        title = titles.get(item.task_id, item.task_id)
-        label = NOTION_NAMES[item.field]
+        grouped.setdefault(item.task_id, []).append(item)
+    for task_id, items in grouped.items():
+        fields = "; ".join(
+            f"{NOTION_NAMES[i.field]} {_show(i.old)} → {_show(i.new)}" for i in items
+        )
+        reasons = "; ".join(dict.fromkeys(i.reason for i in items))
         lines.append(
-            f"- {title}: {label} {_show(item.old)} → {_show(item.new)} ({item.reason})"
+            f"- {_log_title(tasks.get(task_id), task_id, items)}: {fields} ({reasons})"
         )
     if not result.changes:
         lines.append("- No task changes")
