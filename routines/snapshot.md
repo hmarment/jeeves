@@ -35,7 +35,7 @@ empty fields only.
 - `area`: `Work` or `Personal`. Use Project Category (Business → Work, Life → Personal),
   **except** for the "Phone Tasks" project, which is a capture inbox: judge from the title.
 - `size`: `S` ≤ 15 min of effort (a reply, a booking, a quick check); `M` ≤ 2 h; `L` needs
-  several sessions.
+  several sessions. `JIRA |` tickets are `M` unless the summary says otherwise — never `L`.
 - `deadline_type`: `Hard` only with evidence — a `90 |` / `JIRA |` prefix, an agreed date in
   the summary or source, or an official / health / legal deadline. Otherwise `Soft`.
 - `confidential`: true if the title or summary matches a word in the Preferences

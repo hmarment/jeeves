@@ -31,6 +31,8 @@ def inference_changes(
             value = getattr(inference, field)
             if field == "deadline_type" and task.is_protected:
                 value = "Hard"
+            if field == "size" and value == "L" and task.title.startswith("JIRA |"):
+                value = "M"
             if value is not None and getattr(task, field) is None:
                 changes.append(change(task, field, value, "inferred"))
     return changes

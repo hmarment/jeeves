@@ -132,3 +132,9 @@ def test_protected_task_never_gets_soft_written():
 def test_backlog_tasks_are_parked_and_never_rolled():
     task = make_task(status="Backlog", due=YESTERDAY)
     assert soft_roll_changes([task], TODAY, set(), 3) == []
+
+
+def test_jira_ticket_inferred_large_becomes_medium():
+    task = make_task("j", title="JIRA | ASQ-1 - Build thing", size=None)
+    changes = inference_changes([task], {"j": Inference(size="L")})
+    assert fields(changes)[("j", "size")] == "M"
