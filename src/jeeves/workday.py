@@ -45,6 +45,7 @@ def free_intervals(
         for event in events
         if not event.all_day
         and not event.pa_created
+        and not event.focus_time
         and event.end > window_start
         and event.start < window_end
     )

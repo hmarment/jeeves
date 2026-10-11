@@ -88,3 +88,11 @@ def test_utc_now_still_uses_berlin_working_hours():
 
 def test_run_after_work_start_counts_only_remaining_time():
     assert free_intervals(at(15), [], Preferences()) == [(at(15), at(17, 30))]
+
+
+def test_own_focus_time_counts_as_capacity():
+    events = [
+        make_event("deep", at(9), at(17, 30), focus_time=True),
+        make_event("lunch", at(13), at(13, 45)),
+    ]
+    assert focus_minutes(free_intervals(at(9), events, Preferences())) == 445

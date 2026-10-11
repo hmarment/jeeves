@@ -128,14 +128,21 @@ def event_from_google(raw: dict, prefs: Preferences) -> CalendarEvent | None:
         _declined(raw) or raw.get("transparency") == "transparent"
     ):
         return None
+    pa_created = "[jeeves]" in (raw.get("description") or "")
+    focus_time = (
+        raw.get("eventType") == "focusTime"
+        and not pa_created
+        and not any(k.lower() in title.lower() for k in prefs.busy_focus_keywords)
+    )
     return CalendarEvent(
         id=raw["id"],
         title=title,
         start=start,
         end=end,
         all_day=all_day or raw.get("eventType") == "outOfOffice",
-        pa_created="[jeeves]" in (raw.get("description") or ""),
+        pa_created=pa_created,
         out_of_office=out_of_office,
+        focus_time=focus_time,
     )
 
 

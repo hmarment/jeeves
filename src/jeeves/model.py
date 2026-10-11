@@ -76,6 +76,7 @@ class CalendarEvent(Frozen):
     all_day: bool = False
     pa_created: bool = False
     out_of_office: bool = False
+    focus_time: bool = False
 
     @field_validator("start", "end")
     @classmethod
@@ -100,6 +101,7 @@ class Preferences(Frozen):
     recent_soft_days: int = 30
     week_ahead_working_days: int = 5
     backlog_review_count: int = 3
+    busy_focus_keywords: list[str] = ["Lunch"]
     ooo_keywords: list[str] = ["OOO", "Out of office", "Holiday", "Urlaub", "Vacation"]
     confidential_keywords: list[str] = [
         "hiring",

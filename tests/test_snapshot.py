@@ -223,3 +223,27 @@ def test_count_without_pages_is_an_error():
             prefs_payload="```json\n{}\n```",
             now="2026-10-07T05:30:00+00:00",
         )
+
+
+def _focus_event(summary):
+    return {
+        "id": summary,
+        "summary": summary,
+        "eventType": "focusTime",
+        "start": {"dateTime": "2026-10-12T16:00:00+02:00"},
+        "end": {"dateTime": "2026-10-12T17:30:00+02:00"},
+    }
+
+
+def test_own_focus_time_event_is_flagged_but_lunch_is_not():
+    prefs = Preferences()
+    assert event_from_google(
+        _focus_event("Deep Work | Company Rocks"), prefs
+    ).focus_time
+    assert not event_from_google(_focus_event("Lunch"), prefs).focus_time
+
+
+def test_pa_block_typed_focus_time_is_not_flagged():
+    raw = {**_focus_event("🎯 Focus: x"), "description": "[jeeves]"}
+    event = event_from_google(raw, Preferences())
+    assert event.pa_created and not event.focus_time
