@@ -266,3 +266,19 @@ def test_declined_focus_time_event_is_still_dropped():
         "attendees": [{"self": True, "responseStatus": "declined"}],
     }
     assert event_from_google(raw, Preferences()) is None
+
+
+def test_connector_style_focus_time_event_type_is_flagged():
+    raw = {**_focus_event("Deep Work | Company Rocks"), "eventType": "FOCUS_TIME"}
+    assert event_from_google(raw, Preferences()).focus_time
+
+
+def test_connector_style_out_of_office_event_type_is_detected():
+    raw = {
+        "id": "e6",
+        "summary": "Away",
+        "eventType": "OUT_OF_OFFICE",
+        "start": {"dateTime": "2026-10-07T00:00:00+02:00"},
+        "end": {"dateTime": "2026-10-08T00:00:00+02:00"},
+    }
+    assert event_from_google(raw, Preferences()).out_of_office

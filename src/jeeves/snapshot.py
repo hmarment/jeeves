@@ -118,19 +118,24 @@ def _declined(raw: dict) -> bool:
     )
 
 
+def _event_type(raw: dict) -> str:
+    return (raw.get("eventType") or "").replace("_", "").lower()
+
+
 def event_from_google(raw: dict, prefs: Preferences) -> CalendarEvent | None:
+    event_type = _event_type(raw)
     start, all_day = _google_time(raw["start"])
     end, _ = _google_time(raw["end"])
     title = raw.get("summary") or ""
     keyword_hit = any(k.lower() in title.lower() for k in prefs.ooo_keywords)
-    out_of_office = raw.get("eventType") == "outOfOffice" or (all_day and keyword_hit)
+    out_of_office = event_type == "outofoffice" or (all_day and keyword_hit)
     if not out_of_office and (
         _declined(raw) or raw.get("transparency") == "transparent"
     ):
         return None
     pa_created = "[jeeves]" in (raw.get("description") or "")
     focus_time = (
-        raw.get("eventType") == "focusTime"
+        event_type == "focustime"
         and not pa_created
         and not any(k.lower() in title.lower() for k in prefs.busy_focus_keywords)
     )
@@ -139,7 +144,7 @@ def event_from_google(raw: dict, prefs: Preferences) -> CalendarEvent | None:
         title=title,
         start=start,
         end=end,
-        all_day=all_day or raw.get("eventType") == "outOfOffice",
+        all_day=all_day or event_type == "outofoffice",
         pa_created=pa_created,
         out_of_office=out_of_office,
         focus_time=focus_time,
