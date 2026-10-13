@@ -119,3 +119,16 @@ def test_stale_manual_today_beyond_the_queue_cap_keeps_its_forced_place():
     result = decide(make_snapshot(tasks))
     assert "mine" not in result.queue_ids
     assert "mine" in result.must_do_ids
+
+
+def test_queue_overflow_stays_plannable():
+    tasks = [
+        make_task(f"q{i}", deferrals=3, deadline_type="Hard", due=date(2026, 10, 8 + i))
+        for i in range(5)
+    ]
+    tasks.append(
+        make_task("late", deferrals=3, deadline_type="Hard", due=date(2026, 10, 20))
+    )
+    result = decide(make_snapshot(tasks))
+    assert "late" not in result.queue_ids
+    assert "late" in result.must_do_ids

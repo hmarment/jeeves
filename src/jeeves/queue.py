@@ -32,8 +32,14 @@ def queue_candidates(
             or is_stale_manual_today(task, today, prefs, events)
         )
     ]
-    candidates.sort(key=lambda task: (task.created, task.id))
+    candidates.sort(key=_urgency)
     return [task.id for task in candidates]
+
+
+def _urgency(task: Task) -> tuple:
+    if task.effective_deadline_type == "Hard" and task.due is not None:
+        return (0, task.due, task.created, task.id)
+    return (1, date.max, task.created, task.id)
 
 
 def decision_queue(
@@ -57,13 +63,19 @@ def frozen_ids(
 ) -> set[str]:
     queued = set(decision_queue(tasks, uncertain_duplicates, prefs, today, events))
     by_id = {task.id: task for task in tasks}
-    # Manual-Today overflow stays plannable: it is Henry's own pick, and hiding it
-    # from both the plan and the queue would leave it nowhere.
+    # Overflow that is Henry's own Today pick or has a Hard date stays plannable:
+    # hiding it from both the plan and the queue would leave it nowhere.
     return {
         task_id
         for task_id in queue_candidates(
             tasks, uncertain_duplicates, prefs, today, events
         )
         if task_id in queued
-        or not is_stale_manual_today(by_id[task_id], today, prefs, events)
+        or not _must_stay_visible(by_id[task_id], today, prefs, events)
     }
+
+
+def _must_stay_visible(
+    task: Task, today: date, prefs: Preferences, events: list[CalendarEvent]
+) -> bool:
+    return is_stale_manual_today(task, today, prefs, events) or _urgency(task)[0] == 0

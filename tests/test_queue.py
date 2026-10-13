@@ -64,3 +64,22 @@ def test_manual_today_from_thursday_is_fresh_on_monday():
     monday = date(2026, 10, 12)
     task = make_task("thu", status="Today", last_edited=date(2026, 10, 8))
     assert decision_queue([task], [], Preferences(), monday) == []
+
+
+def test_hard_dated_task_outranks_older_undated_ones():
+    tasks = [
+        make_task(
+            f"jira{i}", size="L", deadline_type="Hard", created=date(2026, 8, i + 1)
+        )
+        for i in range(5)
+    ]
+    tasks.append(
+        make_task(
+            "pre_read",
+            deferrals=3,
+            deadline_type="Hard",
+            due=date(2026, 10, 8),
+            created=date(2026, 9, 25),
+        )
+    )
+    assert decision_queue(tasks, [], Preferences(queue_cap=5), TODAY)[0] == "pre_read"
