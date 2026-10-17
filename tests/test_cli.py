@@ -103,3 +103,37 @@ def test_snapshot_command_missing_file_exits_2(tmp_path, capsys):
     ]
     assert main(args) == 2
     assert "nope.json" in capsys.readouterr().err
+
+
+SCORECARD_EVENT = {
+    "id": "e1",
+    "summary": "Sync",
+    "start": {"dateTime": "2026-10-13T10:00:00+02:00"},
+    "end": {"dateTime": "2026-10-13T11:00:00+02:00"},
+    "attendees": [{"email": "me@example.com", "self": True}, {"email": "b@x"}],
+}
+
+
+def test_scorecard_command_prints_week_score(tmp_path, capsys):
+    events = tmp_path / "events.json"
+    events.write_text(json.dumps([SCORECARD_EVENT]))
+    assert main(["scorecard", "--events", str(events), "--week", "2026-10-12"]) == 0
+    assert json.loads(capsys.readouterr().out) == {
+        "week_start": "2026-10-12",
+        "meeting_hours": 1.0,
+        "working_days": 5,
+    }
+
+
+def test_scorecard_accepts_items_envelope(tmp_path, capsys):
+    events = tmp_path / "events.json"
+    events.write_text(json.dumps({"items": [SCORECARD_EVENT]}))
+    assert main(["scorecard", "--events", str(events), "--week", "2026-10-12"]) == 0
+    assert json.loads(capsys.readouterr().out)["meeting_hours"] == 1.0
+
+
+def test_scorecard_non_monday_exits_2(tmp_path, capsys):
+    events = tmp_path / "events.json"
+    events.write_text("[]")
+    assert main(["scorecard", "--events", str(events), "--week", "2026-10-13"]) == 2
+    assert "not a Monday" in capsys.readouterr().err

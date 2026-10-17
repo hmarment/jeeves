@@ -1,15 +1,17 @@
 import argparse
 import json
 import sys
+from datetime import date
 from pathlib import Path
 
 from pydantic import ValidationError
 
-from jeeves.model import PlanResult, Snapshot
+from jeeves.model import PlanResult, Preferences, Snapshot
 from jeeves.plan import decide
 from jeeves.reset import propose_reset
+from jeeves.scorecard import score_week
 from jeeves.skills_build import build
-from jeeves.snapshot import build_snapshot
+from jeeves.snapshot import build_snapshot, extract_preferences
 from jeeves.writes import build_writes
 
 COMMANDS = {"decide": decide, "reset": propose_reset}
@@ -54,6 +56,20 @@ def _writes(args: argparse.Namespace) -> int:
     return 0
 
 
+def _scorecard(args: argparse.Namespace) -> int:
+    try:
+        events = _load(args.events)
+        if isinstance(events, dict):
+            events = events["items"]
+        prefs = extract_preferences(_load(args.prefs)) if args.prefs else Preferences()
+        score = score_week(events, date.fromisoformat(args.week), prefs)
+    except (ValidationError, ValueError, KeyError, TypeError, OSError) as error:
+        print(error, file=sys.stderr)
+        return 2
+    print(score.model_dump_json())
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="jeeves")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -69,6 +85,10 @@ def main(argv: list[str] | None = None) -> int:
     for flag in ("--snapshot", "--result", "--daily-plan"):
         writes_parser.add_argument(flag, type=Path, required=True)
     writes_parser.add_argument("--database-id", required=True)
+    scorecard_parser = commands.add_parser("scorecard")
+    scorecard_parser.add_argument("--events", type=Path, required=True)
+    scorecard_parser.add_argument("--week", required=True)
+    scorecard_parser.add_argument("--prefs", type=Path)
     args = parser.parse_args(argv)
     if args.command == "build-skills":
         for path in build(
@@ -78,6 +98,8 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "snapshot":
         return _snapshot(args)
+    if args.command == "scorecard":
+        return _scorecard(args)
     if args.command == "writes":
         return _writes(args)
     try:
