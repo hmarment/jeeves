@@ -131,7 +131,9 @@ def test_full_ooo_week_is_none():
 def test_part_ooo_week_scores_raw_hours():
     meeting = raw_event("2026-10-14T09:00:00+02:00", "2026-10-14T12:00:00+02:00")
     score = score_week(
-        [all_day("2026-10-12", "2026-10-14"), meeting], WEEK, Preferences()
+        [all_day("2026-10-12", "2026-10-14", eventType="outOfOffice"), meeting],
+        WEEK,
+        Preferences(),
     )
     assert score.meeting_hours == 3.0
     assert score.working_days == 3
@@ -145,3 +147,36 @@ def test_non_monday_week_start_raises():
 def test_rounds_to_one_decimal():
     event = raw_event("2026-10-13T10:00:00+02:00", "2026-10-13T10:20:00+02:00")
     assert hours([event]) == 0.3
+
+
+def test_meetings_on_out_of_office_day_excluded():
+    leave = raw_event(
+        "2026-10-12T00:00:00+02:00",
+        "2026-10-13T00:00:00+02:00",
+        event_id="ooo",
+        eventType="outOfOffice",
+        attendees=[],
+    )
+    on_leave = raw_event(
+        "2026-10-12T10:00:00+02:00", "2026-10-12T11:00:00+02:00", event_id="m1"
+    )
+    back = raw_event(
+        "2026-10-13T10:00:00+02:00", "2026-10-13T11:00:00+02:00", event_id="m2"
+    )
+    score = score_week([leave, on_leave, back], WEEK, Preferences())
+    assert score.meeting_hours == 1.0
+    assert score.working_days == 4
+
+
+def test_colleague_holiday_all_day_event_does_not_block_day():
+    colleague = all_day("2026-10-12", "2026-10-17", summary="Tom on holiday")
+    colleague["transparency"] = "transparent"
+    meeting = raw_event("2026-10-13T10:00:00+02:00", "2026-10-13T11:00:00+02:00")
+    score = score_week([colleague, meeting], WEEK, Preferences())
+    assert score.meeting_hours == 1.0
+    assert score.working_days == 5
+
+
+def test_event_crossing_week_end_is_clipped():
+    event = raw_event("2026-10-18T23:00:00+02:00", "2026-10-19T01:00:00+02:00")
+    assert hours([event]) == 1.0

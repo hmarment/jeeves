@@ -1,6 +1,6 @@
 from datetime import UTC, date, datetime, time, timedelta
 
-from jeeves.model import BERLIN, Frozen, Preferences
+from jeeves.model import BERLIN, CalendarEvent, Frozen, Preferences
 from jeeves.snapshot import _event_type, event_from_google
 from jeeves.workday import is_working_day
 
@@ -13,7 +13,11 @@ class WeekScore(Frozen):
 
 def is_meeting(raw: dict, prefs: Preferences) -> bool:
     event = event_from_google(raw, prefs)
-    if event is None or event.all_day or event.out_of_office or event.pa_created:
+    return event is not None and _is_meeting(raw, event)
+
+
+def _is_meeting(raw: dict, event: CalendarEvent) -> bool:
+    if event.all_day or event.out_of_office or event.pa_created:
         return False
     if _event_type(raw) == "focustime":
         return False
@@ -23,16 +27,24 @@ def is_meeting(raw: dict, prefs: Preferences) -> bool:
     )
 
 
+def _on_leave(day: date, events: list[CalendarEvent]) -> bool:
+    return day.weekday() < 5 and not is_working_day(day, events)
+
+
 def score_week(
     raw_events: list[dict], week_start: date, prefs: Preferences
 ) -> WeekScore:
     if week_start.weekday() != 0:
         raise ValueError(f"week start {week_start} is not a Monday")
+    # Colleagues' all-day "X on holiday" events sit on Henry's calendar too, so only a
+    # real out-of-office event marks his own leave here.
+    prefs = prefs.model_copy(update={"ooo_keywords": []})
     window_start = datetime.combine(week_start, time.min, BERLIN).astimezone(UTC)
     window_end = datetime.combine(
         week_start + timedelta(days=7), time.min, BERLIN
     ).astimezone(UTC)
-    events = [e for raw in raw_events if (e := event_from_google(raw, prefs))]
+    parsed = [(raw, e) for raw in raw_events if (e := event_from_google(raw, prefs))]
+    events = [event for _, event in parsed]
     working_days = sum(
         is_working_day(week_start + timedelta(days=offset), events)
         for offset in range(5)
@@ -44,9 +56,9 @@ def score_week(
             max(event.start.astimezone(UTC), window_start),
             min(event.end.astimezone(UTC), window_end),
         )
-        for raw in raw_events
-        if is_meeting(raw, prefs)
-        and (event := event_from_google(raw, prefs))
+        for raw, event in parsed
+        if _is_meeting(raw, event)
+        and not _on_leave(event.start.date(), events)
         and event.end > window_start
         and event.start < window_end
     )

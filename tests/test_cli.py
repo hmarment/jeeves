@@ -137,3 +137,10 @@ def test_scorecard_non_monday_exits_2(tmp_path, capsys):
     events.write_text("[]")
     assert main(["scorecard", "--events", str(events), "--week", "2026-10-13"]) == 2
     assert "not a Monday" in capsys.readouterr().err
+
+
+def test_scorecard_invalid_week_exits_2(tmp_path, capsys):
+    events = tmp_path / "events.json"
+    events.write_text("[]")
+    assert main(["scorecard", "--events", str(events), "--week", "next week"]) == 2
+    assert capsys.readouterr().err
