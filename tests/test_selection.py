@@ -2,7 +2,7 @@ from datetime import date
 
 from jeeves.model import Preferences
 from jeeves.selection import select
-from tests.factories import TODAY, make_task
+from tests.factories import TODAY, YESTERDAY, make_task
 
 HORIZON = date(2026, 10, 13)
 
@@ -101,3 +101,18 @@ def test_parked_task_with_overdue_hard_date_is_left_parked():
         ),
     ]
     assert pick(tasks).must_do_ids == ["soon"]
+
+
+def test_top_work_must_do_is_planned_on_a_short_day():
+    result = pick([make_task("w0"), make_task("w1")], focus=80)
+    assert result.must_do_ids == ["w0"]
+    assert result.over_capacity_minutes == 40
+
+
+def test_kept_tasks_are_forced_and_ranked_first():
+    tasks = [
+        make_task("prio", priority="Very High"),
+        make_task("k", status="Today", planned_by_pa=YESTERDAY),
+    ]
+    result = select(tasks, TODAY, HORIZON, 0, Preferences(), set(), kept={"k"})
+    assert result.must_do_ids == ["k"]

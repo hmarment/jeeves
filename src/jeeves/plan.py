@@ -1,7 +1,13 @@
 from datetime import date
 
 from jeeves.booking import plan_blocks
-from jeeves.deferrals import close_out_changes, planned_ids, yesterday_completed
+from jeeves.deferrals import (
+    close_out_changes,
+    declined_ids,
+    kept_ids,
+    planned_ids,
+    yesterday_completed,
+)
 from jeeves.dm import render_dm
 from jeeves.hygiene import duplicate_changes, inference_changes, soft_roll_changes
 from jeeves.model import (
@@ -56,6 +62,8 @@ def decide(snapshot: Snapshot) -> PlanResult:
 
     tasks = snapshot.tasks
     changes: list[FieldChange] = []
+    kept = kept_ids(tasks, snapshot.yesterday_plan)
+    declined = declined_ids(tasks, snapshot.yesterday_plan, today)
 
     def run(step: list[FieldChange]) -> None:
         nonlocal tasks
@@ -75,7 +83,7 @@ def decide(snapshot: Snapshot) -> PlanResult:
     horizon_end = working_days_ahead(today, prefs.week_ahead_working_days, events)[-1]
     intervals = free_intervals(snapshot.now, events, prefs)
     focus = focus_minutes(intervals)
-    selection = select(tasks, today, horizon_end, focus, prefs, frozen)
+    selection = select(tasks, today, horizon_end, focus, prefs, frozen | declined, kept)
     run(today_changes(tasks, selection.must_do_ids + selection.quick_win_ids, today))
 
     by_id = {task.id: task for task in tasks}

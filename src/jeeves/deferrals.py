@@ -39,6 +39,33 @@ def close_out_changes(
     return changes
 
 
+def kept_ids(tasks: list[Task], plan: DailyPlanState | None) -> set[str]:
+    if plan is None or not plan.shutdown_done:
+        return set()
+    planned = planned_ids(plan)
+    return {task.id for task in tasks if task.id in planned and task.status == "Today"}
+
+
+def declined_ids(
+    tasks: list[Task], plan: DailyPlanState | None, today: date
+) -> set[str]:
+    if plan is None:
+        return set()
+    return {
+        task.id
+        for task in tasks
+        if task.is_open
+        and task.status != "Today"
+        and task.last_deferred is not None
+        and task.last_deferred >= plan.day
+        and not (
+            task.effective_deadline_type == "Hard"
+            and task.due is not None
+            and task.due <= today
+        )
+    }
+
+
 def yesterday_completed(tasks: list[Task], plan: DailyPlanState | None) -> int | None:
     if plan is None or plan.must_dos_completed is not None:
         return None

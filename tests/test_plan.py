@@ -132,3 +132,33 @@ def test_queue_overflow_stays_plannable():
     result = decide(make_snapshot(tasks))
     assert "late" not in result.queue_ids
     assert "late" in result.must_do_ids
+
+
+def test_carry_over_kept_at_shutdown_stays_in_today():
+    plan = DailyPlanState(day=YESTERDAY, must_do_ids=["k"], shutdown_done=True)
+    tasks = [make_task(f"p{i}", priority="Very High") for i in range(3)] + [
+        make_task("k", status="Today", planned_by_pa=YESTERDAY, last_deferred=YESTERDAY)
+    ]
+    result = decide(make_snapshot(tasks, yesterday_plan=plan))
+    assert "k" in result.must_do_ids
+    assert ("k", "status") not in {(c.task_id, c.field) for c in result.changes}
+
+
+def test_task_declined_yesterday_is_not_reproposed():
+    plan = DailyPlanState(day=YESTERDAY, shutdown_done=True)
+    tasks = [
+        make_task("gift", size="S", deferrals=1, last_deferred=YESTERDAY),
+        make_task("w", deferrals=1, last_deferred=YESTERDAY),
+    ]
+    result = decide(make_snapshot(tasks, yesterday_plan=plan))
+    assert result.must_do_ids == []
+    assert result.quick_win_ids == []
+
+
+def test_declined_task_with_hard_date_today_is_still_planned():
+    plan = DailyPlanState(day=YESTERDAY)
+    task = make_task(
+        "h", due=TODAY, deadline_type="Hard", deferrals=1, last_deferred=YESTERDAY
+    )
+    result = decide(make_snapshot([task], yesterday_plan=plan))
+    assert result.must_do_ids == ["h"]

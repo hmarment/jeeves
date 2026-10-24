@@ -62,24 +62,29 @@ def select(
     focus: int,
     prefs: Preferences,
     excluded: set[str],
+    kept: set[str] = frozenset(),
 ) -> Selection:
     candidates = sorted(
         (task for task in tasks if _is_candidate(task, excluded, today, horizon_end)),
         key=lambda task: _rank_key(task, today, horizon_end),
     )
-    ordered = [t for t in candidates if t.is_manual_today] + [
-        t for t in candidates if not t.is_manual_today
-    ]
+    first = [t for t in candidates if t.is_manual_today or t.id in kept]
+    ordered = first + [t for t in candidates if t not in first]
     budget = max(focus - prefs.quick_wins_minutes, 0)
     slots = {"Work": prefs.work_must_dos, "Personal": prefs.personal_must_dos}
     must_dos, used = [], 0
     for task in ordered:
         area = task.area or "Work"
-        forced = task.is_manual_today or _tier(task, today, horizon_end) == 0
+        forced = (
+            task.is_manual_today
+            or task.id in kept
+            or _tier(task, today, horizon_end) == 0
+        )
         if slots[area] == 0 or (task.size == "S" and not forced):
             continue
         cost = minutes_for(task, prefs) if area == "Work" else 0
-        if cost and not forced and used + cost > budget:
+        first_work = area == "Work" and slots["Work"] == prefs.work_must_dos
+        if cost and not forced and not first_work and used + cost > budget:
             continue
         must_dos.append(task)
         used += cost
