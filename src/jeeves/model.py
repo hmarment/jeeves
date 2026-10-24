@@ -57,7 +57,7 @@ class Task(Frozen):
 
     @property
     def effective_deadline_type(self) -> DeadlineType | None:
-        return "Hard" if self.is_protected else self.deadline_type
+        return "Hard" if self.is_protected and self.due else self.deadline_type
 
     @property
     def is_manual_today(self) -> bool:

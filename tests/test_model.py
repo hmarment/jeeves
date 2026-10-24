@@ -26,11 +26,18 @@ def test_default_mode_is_propose_only():
     assert Preferences().mode == "propose-only"
 
 
-def test_protected_prefix_is_always_hard():
-    ninety = make_task(title="90 | Decision on platforms", deadline_type=None)
-    jira = make_task(title="JIRA | ASQ-1 fix", deadline_type="Soft")
+def test_dated_protected_task_is_hard():
+    ninety = make_task(
+        title="90 | Decision on platforms", deadline_type=None, due=TODAY
+    )
+    jira = make_task(title="JIRA | ASQ-1 fix", deadline_type="Soft", due=TODAY)
     assert ninety.effective_deadline_type == "Hard"
     assert jira.effective_deadline_type == "Hard"
+
+
+def test_undated_protected_task_is_not_hard_by_prefix():
+    jira = make_task(title="JIRA | ASQ-1 fix", deadline_type=None)
+    assert jira.effective_deadline_type is None
 
 
 def test_unassessed_task_needs_inference():

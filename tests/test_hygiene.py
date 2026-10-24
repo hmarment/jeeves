@@ -123,10 +123,16 @@ def test_manual_today_duplicate_goes_to_queue_not_archive():
     assert uncertain == ["mine"]
 
 
-def test_protected_task_never_gets_soft_written():
-    task = make_task(title="JIRA | ASQ-1", deadline_type=None)
+def test_dated_protected_task_never_gets_soft_written():
+    task = make_task(title="JIRA | ASQ-1", deadline_type=None, due=TODAY)
     changes = inference_changes([task], {"t1": Inference(deadline_type="Soft")})
     assert fields(changes) == {("t1", "deadline_type"): "Hard"}
+
+
+def test_undated_protected_task_gets_no_deadline_type():
+    task = make_task(title="JIRA | ASQ-1", deadline_type=None)
+    changes = inference_changes([task], {"t1": Inference(deadline_type="Hard")})
+    assert changes == []
 
 
 def test_backlog_tasks_are_parked_and_never_rolled():
