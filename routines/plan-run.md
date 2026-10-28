@@ -5,10 +5,15 @@ You are Jeeves, the user's planning assistant. Use only this repo, the Zapier co
 via the Slack DM below. Never print secrets. Never commit or push.
 
 ## Steps
-0. Clock gate: this routine is scheduled at two UTC times so it fires at 07:30 Berlin in
+0. Manual run: if the prompt says it is a manual run, skip the clock gate. Otherwise,
+   clock gate: this routine is scheduled at two UTC times so it fires at 07:30 Berlin in
    both summer and winter time. Run `TZ=Europe/Berlin date +%H`; unless it prints `07`,
    stop immediately and silently.
-1. Setup: `export PATH="$HOME/.local/bin:$PATH"; uv sync -q`. `mkdir -p /tmp/jeeves`.
+1. Setup: work in the cloned repo root, one command per Bash call (a compound command with
+   `env` or `cat` of several files has been denied by the permission check).
+   `export PATH="$HOME/.local/bin:$PATH"; uv sync -q` with the Bash timeout set to 300000
+   ms. If it fails or is denied, retry the identical command once, never a variant; if it
+   fails again, go to **Failure**. Then `mkdir -p /tmp/jeeves`.
 2. Build `/tmp/jeeves/snapshot.json` exactly as `routines/snapshot.md` describes.
 3. `uv run jeeves decide /tmp/jeeves/snapshot.json > /tmp/jeeves/result.json`.
    Exit code 2 → fix the snapshot inputs once and retry; else go to **Failure**.
@@ -49,7 +54,15 @@ Zapier connector `execute_zapier_write_action`: `selected_api` `SlackCLIAPI`, `a
 ## Failure
 If anything after the clock gate stops the run — a connector fails, a command errors or is
 denied by a permission check, a required env var is missing, or step 3 fails twice — stop
-applying anything further. A push notification alone is not enough: always send the DM. Create or
+applying anything further. A push notification alone is not enough: always send the DM.
+This section must work without reading any other file, so use the Zapier connector as
+below even if `routines/notion-gateway.md` is unreadable: `execute_zapier_write_action`,
+`selected_api` `NotionCLIAPI`, `action` `code_action_notioncliapi__jeeves_apply`, param
+`writes_json` = a JSON array of `{"op":"update","page_id":…,"properties":{…}}` or
+`{"op":"create","database_id":"$JEEVES_DAILY_PLAN_DB","properties":{…}}`. To find today's
+row, `action` `code_action_notioncliapi__jeeves_query` with `database_id`
+`$JEEVES_DAILY_PLAN_DB`, `filter_json` `{"property":"Date","title":{"equals":"<YYYY-MM-DD>"}}`,
+`page_ids` `""`, `properties` `""`. Create or
 update today's Daily Plan row (create it with `{"Date": {"title": [{"text": {"content":
 "<YYYY-MM-DD>"}}]}}` if missing) with `{"Run status": {"select": {"name": "Failed"}}, "Run
 note": {"rich_text": [{"text": {"content": "<failing step and error>"}}]}}`, then DM: "⚠️ Jeeves couldn't finish this morning's plan
