@@ -10,10 +10,13 @@ commit or push. Message nobody: no DM and no push notification, on success or fa
    gate and the Monday check and use that week. Otherwise, clock gate: this routine is
    scheduled at two UTC times so it fires at 06:30 Berlin in both summer and winter time.
    Run `TZ=Europe/Berlin date +%H`; unless it prints `06`, stop immediately and silently.
-1. Setup: work in the cloned repo root. `export PATH="$HOME/.local/bin:$PATH"; uv sync -q
-   --no-dev` with the Bash timeout set to 300000 ms. If it fails or is denied, retry the
-   identical command once, never a variant; if it fails again, stop and write nothing.
-   `mkdir -p /tmp/jeeves` (before saving any file there).
+1. Setup: the environment's setup script has already cloned and synced the repo at
+   `/home/user/jeeves` (the prompt's `git clone` then fails harmlessly); start every Bash
+   command with `cd /home/user/jeeves &&`. `git pull -q` (ignore a failure), then
+   `test -x .venv/bin/jeeves`. Only if that fails: `export PATH="$HOME/.local/bin:$PATH";
+   uv sync -q --no-dev` with the Bash timeout set to 300000 ms; if it is denied or fails,
+   retry the identical command once, never a variant; if it fails again, stop and write
+   nothing. `mkdir -p /tmp/jeeves` (before saving any file there).
    If `JEEVES_SCORECARD_SHEET`, `JEEVES_SCORECARD_WORKSHEET` or
    `JEEVES_ZAPIER_SHEETS_CONNECTION` is empty, stop: never guess a sheet, tab or account.
    Unless `WEEK` came from the prompt: if `TZ=Europe/Berlin date +%u` isn't `1`, stop
