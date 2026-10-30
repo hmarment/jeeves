@@ -9,10 +9,12 @@ via the Slack DM below. Never print secrets. Never commit or push.
    clock gate: this routine is scheduled at two UTC times so it fires at 07:30 Berlin in
    both summer and winter time. Run `TZ=Europe/Berlin date +%H`; unless it prints `07`,
    stop immediately and silently.
-1. Setup: work in the cloned repo root, one command per Bash call (a compound command with
-   `env` or `cat` of several files has been denied by the permission check).
+1. Setup: the environment's setup script has already cloned and synced the repo at
+   `/home/user/jeeves`; start every Bash command with `cd /home/user/jeeves &&`, one command
+   per Bash call (the permission check has denied compound commands and `uv sync`).
+   `git pull -q` (ignore a failure), then `test -x .venv/bin/jeeves`. Only if that fails:
    `export PATH="$HOME/.local/bin:$PATH"; uv sync -q` with the Bash timeout set to 300000
-   ms. If it fails or is denied, retry the identical command once, never a variant; if it
+   ms; if it is denied or fails, retry the identical command once, never a variant; if it
    fails again, go to **Failure**. Then `mkdir -p /tmp/jeeves`.
 2. Build `/tmp/jeeves/snapshot.json` exactly as `routines/snapshot.md` describes.
 3. `uv run jeeves decide /tmp/jeeves/snapshot.json > /tmp/jeeves/result.json`.
