@@ -282,3 +282,27 @@ def test_connector_style_out_of_office_event_type_is_detected():
         "end": {"dateTime": "2026-10-08T00:00:00+02:00"},
     }
     assert event_from_google(raw, Preferences()).out_of_office
+
+
+def test_colleagues_all_day_holiday_event_is_not_my_out_of_office():
+    raw = {
+        "id": "rob",
+        "summary": "Rob off - School Holidays",
+        "start": {"date": "2026-10-26"},
+        "end": {"date": "2026-10-31"},
+        "organizer": {"email": "rob@adsquare.com"},
+        "transparency": "transparent",
+        "attendees": [{"email": "henry@adsquare.com", "self": True}],
+    }
+    assert event_from_google(raw, Preferences()) is None
+
+
+def test_own_all_day_holiday_event_is_out_of_office():
+    raw = {
+        "id": "mine",
+        "summary": "Holiday",
+        "start": {"date": "2026-10-26"},
+        "end": {"date": "2026-10-31"},
+        "organizer": {"email": "henry@adsquare.com", "self": True},
+    }
+    assert event_from_google(raw, Preferences()).out_of_office

@@ -118,6 +118,10 @@ def _declined(raw: dict) -> bool:
     )
 
 
+def _organised_by_someone_else(raw: dict) -> bool:
+    return bool(raw.get("organizer")) and not raw["organizer"].get("self")
+
+
 def _event_type(raw: dict) -> str:
     return (raw.get("eventType") or "").replace("_", "").lower()
 
@@ -127,7 +131,9 @@ def event_from_google(raw: dict, prefs: Preferences) -> CalendarEvent | None:
     start, all_day = _google_time(raw["start"])
     end, _ = _google_time(raw["end"])
     title = raw.get("summary") or ""
-    keyword_hit = any(k.lower() in title.lower() for k in prefs.ooo_keywords)
+    keyword_hit = not _organised_by_someone_else(raw) and any(
+        k.lower() in title.lower() for k in prefs.ooo_keywords
+    )
     out_of_office = event_type == "outofoffice" or (all_day and keyword_hit)
     if not out_of_office and (
         _declined(raw) or raw.get("transparency") == "transparent"
