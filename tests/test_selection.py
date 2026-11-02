@@ -127,3 +127,11 @@ def test_birthday_tasks_never_take_must_do_or_quick_win_slots():
     result = pick(tasks)
     assert result.must_do_ids == ["w"]
     assert result.quick_win_ids == []
+
+
+def test_errand_tagged_tasks_stay_out_of_the_desk_quick_wins():
+    tasks = [
+        make_task("walk", size="S", tags=["Errand"]),
+        make_task("desk", size="S"),
+    ]
+    assert pick(tasks).quick_win_ids == ["desk"]

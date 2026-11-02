@@ -92,7 +92,11 @@ def select(
 
     chosen = {task.id for task in must_dos}
     quick_pool = sorted(
-        (t for t in candidates if t.id not in chosen and t.size == "S"),
+        (
+            t
+            for t in candidates
+            if t.id not in chosen and t.size == "S" and not t.is_errand
+        ),
         key=lambda task: (task.due or date.max, task.created, task.id),
     )
     quick_wins, quick_used = [], 0

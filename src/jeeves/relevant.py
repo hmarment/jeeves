@@ -26,6 +26,18 @@ def birthday_ids(tasks: list[Task], today: date) -> list[str]:
     return [task.id for task in due]
 
 
+def errand_ids(tasks: list[Task]) -> list[str]:
+    errands = [
+        task
+        for task in tasks
+        if task.is_errand
+        and task.status in SELECTABLE_STATUSES
+        and not task.is_birthday
+    ]
+    errands.sort(key=lambda task: (task.due or date.max, task.created, task.id))
+    return [task.id for task in errands[:LIMIT]]
+
+
 def _reason(
     task: Task, today: date, horizon_end: date, declined: set[str]
 ) -> str | None:

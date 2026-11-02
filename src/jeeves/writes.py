@@ -154,6 +154,14 @@ def _relevant_lines(result: PlanResult, tasks: dict[str, Task]) -> list[str]:
     return lines
 
 
+def _errand_lines(result: PlanResult, tasks: dict[str, Task]) -> list[str]:
+    if not result.errand_ids:
+        return []
+    return ["## Lunch errands"] + [
+        f"- {_log_title(tasks[i], i, [])}" for i in result.errand_ids
+    ]
+
+
 def _log_lines(snapshot: Snapshot, result: PlanResult, mode: str) -> list[str]:
     tasks = {task.id: task for task in snapshot.tasks}
     heading = (
@@ -171,6 +179,7 @@ def _log_lines(snapshot: Snapshot, result: PlanResult, mode: str) -> list[str]:
         lines.append("- No task changes")
     lines.extend(_birthday_lines(snapshot, result, tasks))
     lines.extend(_relevant_lines(result, tasks))
+    lines.extend(_errand_lines(result, tasks))
     lines.append("## Calendar")
     for block in result.blocks_create:
         lines.append(

@@ -1,6 +1,6 @@
 from datetime import date
 
-from jeeves.relevant import LIMIT, also_relevant, birthday_ids
+from jeeves.relevant import LIMIT, also_relevant, birthday_ids, errand_ids
 from tests.factories import TODAY, make_task
 
 HORIZON = date(2026, 10, 13)
@@ -74,3 +74,16 @@ def test_list_is_capped_and_counts_the_rest():
     shown, more = relevant(tasks)
     assert len(shown) == LIMIT
     assert more == 3
+
+
+def test_errands_are_open_tagged_tasks_oldest_due_first_and_capped():
+    tasks = [
+        make_task("late", size="S", tags=["errand"], due=date(2026, 10, 1)),
+        make_task("undated", size="S", tags=["Errand"]),
+        make_task("plain", size="S"),
+        make_task("done", size="S", tags=["Errand"], status="Done"),
+    ] + [make_task(f"e{i}", size="S", tags=["Errand"]) for i in range(LIMIT)]
+    ids = errand_ids(tasks)
+    assert ids[0] == "late"
+    assert "plain" not in ids and "done" not in ids
+    assert len(ids) == LIMIT

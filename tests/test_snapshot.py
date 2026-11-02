@@ -306,3 +306,12 @@ def test_own_all_day_holiday_event_is_out_of_office():
         "organizer": {"email": "henry@adsquare.com", "self": True},
     }
     assert event_from_google(raw, Preferences()).out_of_office
+
+
+def test_task_reads_tags_and_tolerates_none():
+    assert task_from_page(notion_task(Tags=["Errand", "Delegated"])).tags == [
+        "Errand",
+        "Delegated",
+    ]
+    assert task_from_page(notion_task(Tags=None)).tags == []
+    assert task_from_page(notion_task()).tags == []

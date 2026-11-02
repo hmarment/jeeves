@@ -21,7 +21,7 @@ from jeeves.model import (
     apply_changes,
 )
 from jeeves.queue import decision_queue, frozen_ids
-from jeeves.relevant import also_relevant, birthday_ids
+from jeeves.relevant import also_relevant, birthday_ids, errand_ids
 from jeeves.review import backlog_review, is_first_planned_day_of_week
 from jeeves.selection import select
 from jeeves.today import today_changes
@@ -109,6 +109,7 @@ def decide(snapshot: Snapshot) -> PlanResult:
             else []
         ),
         birthday_ids=birthday_ids(tasks, today),
+        errand_ids=errand_ids(tasks),
         also_relevant=shown,
         also_relevant_more=more,
         changes=changes,

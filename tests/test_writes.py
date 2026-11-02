@@ -258,3 +258,11 @@ def test_body_has_no_extra_sections_when_nothing_to_show():
     lines = _body(make_snapshot([make_task("a")]), [])
     assert "## Birthdays" not in lines
     assert "## Also relevant, not planned" not in lines
+
+
+def test_body_lists_lunch_errands():
+    snapshot = make_snapshot([make_task("e", title="Return parcel")])
+    result = PlanResult(status="planned", errand_ids=["e"])
+    out = build_writes(snapshot, result, {"pages": []}, "db", "auto")
+    lines = out["plan_writes"][0]["body_lines"]
+    assert lines[lines.index("## Lunch errands") + 1] == "- Return parcel"

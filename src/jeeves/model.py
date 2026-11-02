@@ -47,6 +47,7 @@ class Task(Frozen):
     planned_by_pa: date | None = None
     last_reviewed: date | None = None
     rock_linked: bool = False
+    tags: list[str] = []
 
     @property
     def is_open(self) -> bool:
@@ -63,6 +64,10 @@ class Task(Frozen):
     @property
     def is_manual_today(self) -> bool:
         return self.status == "Today" and self.planned_by_pa is None
+
+    @property
+    def is_errand(self) -> bool:
+        return any(tag.lower() == "errand" for tag in self.tags)
 
     @property
     def is_birthday(self) -> bool:
@@ -194,6 +199,7 @@ class PlanResult(Frozen):
     queue_ids: list[str] = []
     review_ids: list[str] = []
     birthday_ids: list[str] = []
+    errand_ids: list[str] = []
     also_relevant: list[AlsoRelevant] = []
     also_relevant_more: int = 0
     changes: list[FieldChange] = []

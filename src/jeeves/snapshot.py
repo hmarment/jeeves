@@ -87,6 +87,7 @@ def task_from_page(page: dict) -> Task:
         planned_by_pa=berlin_date(props.get("Planned by PA")),
         last_reviewed=berlin_date(props.get("Last reviewed")),
         rock_linked=any("Rock" in str(name) for name in projects),
+        tags=[str(tag) for tag in props.get("Tags") or []],
     )
 
 
