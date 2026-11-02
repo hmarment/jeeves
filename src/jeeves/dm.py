@@ -4,7 +4,12 @@ from jeeves.model import Task
 
 
 def render_dm(
-    day: date, focus: int, first: Task | None, queue_size: int, over_capacity: int
+    day: date,
+    focus: int,
+    first: Task | None,
+    queue_size: int,
+    over_capacity: int,
+    birthdays: int = 0,
 ) -> str:
     lines = [
         f"☀️ Plan for {day:%a %d %b} is ready: {focus // 60}h{focus % 60:02d} focus time."
@@ -15,6 +20,9 @@ def render_dm(
     if queue_size:
         plural = "s" if queue_size != 1 else ""
         lines.append(f"{queue_size} decision{plural} waiting.")
+    if birthdays:
+        plural = "s" if birthdays != 1 else ""
+        lines.append(f"🎂 {birthdays} birthday task{plural} due or late.")
     if over_capacity:
         lines.append(f"⚠️ Over capacity by {over_capacity} min.")
     lines.append("Run /start-day when you're ready.")

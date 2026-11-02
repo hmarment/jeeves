@@ -144,3 +144,8 @@ def test_jira_ticket_inferred_large_becomes_medium():
     task = make_task("j", title="JIRA | ASQ-1 - Build thing", size=None)
     changes = inference_changes([task], {"j": Inference(size="L")})
     assert fields(changes)[("j", "size")] == "M"
+
+
+def test_overdue_birthday_keeps_its_date():
+    task = make_task("b", title="Message Ann — happy birthday", due=date(2026, 10, 1))
+    assert soft_roll_changes([task], TODAY, set(), 3) == []

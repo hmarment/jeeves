@@ -20,3 +20,8 @@ def test_dm_hides_confidential_title():
     text = render_dm(TODAY, 60, make_task(title="Hire CRO", confidential=True), 0, 0)
     assert "Hire CRO" not in text
     assert "(confidential)" in text
+
+
+def test_dm_counts_birthday_tasks():
+    assert "🎂 2 birthday tasks due or late." in render_dm(TODAY, 60, None, 0, 0, 2)
+    assert "birthday" not in render_dm(TODAY, 60, None, 0, 0)

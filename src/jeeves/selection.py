@@ -44,7 +44,7 @@ def _rank_key(task: Task, today: date, horizon_end: date) -> tuple:
 def _is_candidate(
     task: Task, excluded: set[str], today: date, horizon_end: date
 ) -> bool:
-    if task.id in excluded or task.size == "L":
+    if task.id in excluded or task.size == "L" or task.is_birthday:
         return False
     if task.status in SELECTABLE_STATUSES:
         return True

@@ -1,6 +1,12 @@
 from datetime import date
 
-from jeeves.model import BlockCreate, DailyPlanState, FieldChange, PlanResult
+from jeeves.model import (
+    AlsoRelevant,
+    BlockCreate,
+    DailyPlanState,
+    FieldChange,
+    PlanResult,
+)
 from jeeves.writes import build_writes, task_writes
 from tests.factories import TODAY, YESTERDAY, at, make_snapshot, make_task
 
@@ -215,3 +221,40 @@ def test_log_hides_title_of_task_inferred_confidential():
     snapshot = make_snapshot([make_task("c", title="Salary review", size=None)])
     lines = _body(snapshot, [change("c", "confidential", False, True, "inferred")])
     assert "Salary review" not in "\n".join(lines)
+
+
+def test_body_lists_birthdays_and_also_relevant_before_the_calendar():
+    snapshot = make_snapshot(
+        [
+            make_task("b", title="Message Ann — happy birthday", due=date(2026, 10, 5)),
+            make_task("t", title="Prep board deck"),
+            make_task("c", title="Comp band", confidential=True),
+        ]
+    )
+    result = PlanResult(
+        status="planned",
+        birthday_ids=["b"],
+        also_relevant=[
+            AlsoRelevant(task_id="t", reason="High priority"),
+            AlsoRelevant(task_id="c", reason="Hard, due Fri 09 Oct"),
+        ],
+        also_relevant_more=2,
+    )
+    out = build_writes(snapshot, result, {"pages": []}, "db", "auto")
+    lines = out["plan_writes"][0]["body_lines"]
+    assert lines[lines.index("## Birthdays") + 1] == (
+        "- Message Ann — happy birthday: 2 days late (due 05 Oct)"
+    )
+    start = lines.index("## Also relevant, not planned")
+    assert lines[start + 1 : start + 4] == [
+        "- Prep board deck: High priority",
+        "- 🔒 confidential task: Hard, due Fri 09 Oct",
+        "- … and 2 more",
+    ]
+    assert lines.index("## Calendar") > start
+
+
+def test_body_has_no_extra_sections_when_nothing_to_show():
+    lines = _body(make_snapshot([make_task("a")]), [])
+    assert "## Birthdays" not in lines
+    assert "## Also relevant, not planned" not in lines

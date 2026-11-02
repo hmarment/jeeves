@@ -116,3 +116,14 @@ def test_kept_tasks_are_forced_and_ranked_first():
     ]
     result = select(tasks, TODAY, HORIZON, 0, Preferences(), set(), kept={"k"})
     assert result.must_do_ids == ["k"]
+
+
+def test_birthday_tasks_never_take_must_do_or_quick_win_slots():
+    tasks = [
+        make_task("b1", title="Message Ann — happy birthday", size="S"),
+        make_task("b2", title="Buy gift for Bob", due=TODAY, deadline_type="Hard"),
+        make_task("w"),
+    ]
+    result = pick(tasks)
+    assert result.must_do_ids == ["w"]
+    assert result.quick_win_ids == []

@@ -21,6 +21,7 @@ from jeeves.model import (
     apply_changes,
 )
 from jeeves.queue import decision_queue, frozen_ids
+from jeeves.relevant import also_relevant, birthday_ids
 from jeeves.review import backlog_review, is_first_planned_day_of_week
 from jeeves.selection import select
 from jeeves.today import today_changes
@@ -86,6 +87,14 @@ def decide(snapshot: Snapshot) -> PlanResult:
     selection = select(tasks, today, horizon_end, focus, prefs, frozen | declined, kept)
     run(today_changes(tasks, selection.must_do_ids + selection.quick_win_ids, today))
 
+    shown, more = also_relevant(
+        tasks,
+        set(selection.must_do_ids) | set(selection.quick_win_ids),
+        today,
+        horizon_end,
+        frozen,
+        declined,
+    )
     by_id = {task.id: task for task in tasks}
     must_dos = [by_id[task_id] for task_id in selection.must_do_ids]
     return PlanResult(
@@ -99,6 +108,9 @@ def decide(snapshot: Snapshot) -> PlanResult:
             if is_first_planned_day_of_week(today, snapshot.yesterday_plan)
             else []
         ),
+        birthday_ids=birthday_ids(tasks, today),
+        also_relevant=shown,
+        also_relevant_more=more,
         changes=changes,
         blocks_create=plan_blocks(
             must_dos, bool(selection.quick_win_ids), intervals, snapshot.now, prefs
@@ -118,6 +130,7 @@ def decide(snapshot: Snapshot) -> PlanResult:
             must_dos[0] if must_dos else None,
             len(queue),
             selection.over_capacity_minutes,
+            len(birthday_ids(tasks, today)),
         ),
         **_metrics(tasks, today, prefs),
     )

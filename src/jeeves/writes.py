@@ -122,6 +122,38 @@ def _log_line(title: str, items: list[FieldChange]) -> str:
     return f"- {title}: {fields} ({'; '.join(reasons)})"
 
 
+def _when(due: date, today: date) -> str:
+    days = (due - today).days
+    if days == 0:
+        return "due today"
+    if days > 0:
+        return f"due in {days} day{'s' if days != 1 else ''}"
+    return f"{-days} day{'s' if days != -1 else ''} late (due {due:%d %b})"
+
+
+def _birthday_lines(
+    snapshot: Snapshot, result: PlanResult, tasks: dict[str, Task]
+) -> list[str]:
+    if not result.birthday_ids:
+        return []
+    return ["## Birthdays"] + [
+        f"- {_log_title(tasks[i], i, [])}: {_when(tasks[i].due, snapshot.today)}"
+        for i in result.birthday_ids
+    ]
+
+
+def _relevant_lines(result: PlanResult, tasks: dict[str, Task]) -> list[str]:
+    if not result.also_relevant:
+        return []
+    lines = ["## Also relevant, not planned"] + [
+        f"- {_log_title(tasks[item.task_id], item.task_id, [])}: {item.reason}"
+        for item in result.also_relevant
+    ]
+    if result.also_relevant_more:
+        lines.append(f"- … and {result.also_relevant_more} more")
+    return lines
+
+
 def _log_lines(snapshot: Snapshot, result: PlanResult, mode: str) -> list[str]:
     tasks = {task.id: task for task in snapshot.tasks}
     heading = (
@@ -137,6 +169,8 @@ def _log_lines(snapshot: Snapshot, result: PlanResult, mode: str) -> list[str]:
         lines.append(_log_line(_log_title(tasks.get(task_id), task_id, items), items))
     if not result.changes:
         lines.append("- No task changes")
+    lines.extend(_birthday_lines(snapshot, result, tasks))
+    lines.extend(_relevant_lines(result, tasks))
     lines.append("## Calendar")
     for block in result.blocks_create:
         lines.append(

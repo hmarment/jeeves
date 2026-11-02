@@ -13,6 +13,7 @@ FieldValue = date | bool | int | str | None
 
 BERLIN = ZoneInfo("Europe/Berlin")
 PROTECTED_PREFIXES = ("90 |", "JIRA |")
+BIRTHDAY_WORDS = ("birthday", "gift for")
 PARKED_STATUS = "Backlog"
 OPEN_STATUSES = frozenset({"Backlog", "Not Started", "Today", "In Progress", "Pending"})
 SELECTABLE_STATUSES = frozenset({"Not Started", "Today", "In Progress"})
@@ -62,6 +63,11 @@ class Task(Frozen):
     @property
     def is_manual_today(self) -> bool:
         return self.status == "Today" and self.planned_by_pa is None
+
+    @property
+    def is_birthday(self) -> bool:
+        title = self.title.lower()
+        return any(word in title for word in BIRTHDAY_WORDS)
 
     @property
     def needs_inference(self) -> bool:
@@ -174,6 +180,11 @@ class BlockDelete(Frozen):
     reason: str
 
 
+class AlsoRelevant(Frozen):
+    task_id: str
+    reason: str
+
+
 class PlanResult(Frozen):
     status: Literal["planned", "skipped", "locked"]
     reason: str = ""
@@ -182,6 +193,9 @@ class PlanResult(Frozen):
     quick_win_ids: list[str] = []
     queue_ids: list[str] = []
     review_ids: list[str] = []
+    birthday_ids: list[str] = []
+    also_relevant: list[AlsoRelevant] = []
+    also_relevant_more: int = 0
     changes: list[FieldChange] = []
     blocks_create: list[BlockCreate] = []
     blocks_delete: list[BlockDelete] = []

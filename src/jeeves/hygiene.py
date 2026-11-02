@@ -74,6 +74,7 @@ def soft_roll_changes(
             and task.due is not None
             and task.due < today
             and task.id not in skip
+            and not task.is_birthday
             and task.deferrals < deferral_limit
         ):
             changes.extend(
