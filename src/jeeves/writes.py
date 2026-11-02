@@ -46,6 +46,7 @@ PROPERTY_TYPES = {
     "Run note": "rich_text",
 }
 BATCH_SIZE = 10
+TITLE_LIMIT = 50
 
 
 def _value(value: Any) -> Any:
@@ -89,6 +90,10 @@ def _show(value: Any) -> str:
     return "–" if value is None else str(_value(value))
 
 
+def _short(title: str) -> str:
+    return title if len(title) <= TITLE_LIMIT else title[: TITLE_LIMIT - 1] + "…"
+
+
 def _log_title(task: Task | None, task_id: str, items: list[FieldChange]) -> str:
     if task is None:
         return task_id
@@ -98,8 +103,23 @@ def _log_title(task: Task | None, task_id: str, items: list[FieldChange]) -> str
     return (
         "🔒 confidential task"
         if task.confidential or becomes_confidential
-        else task.title
+        else _short(task.title)
     )
+
+
+def _log_change(item: FieldChange) -> str:
+    name = NOTION_NAMES[item.field]
+    if item.old is None:
+        return f"{name} → {_show(item.new)}"
+    return f"{name} {_show(item.old)} → {_show(item.new)}"
+
+
+def _log_line(title: str, items: list[FieldChange]) -> str:
+    fields = "; ".join(_log_change(i) for i in items)
+    reasons = list(dict.fromkeys(i.reason for i in items))
+    if reasons == ["inferred"]:
+        return f"- {title}: {fields}"
+    return f"- {title}: {fields} ({'; '.join(reasons)})"
 
 
 def _log_lines(snapshot: Snapshot, result: PlanResult, mode: str) -> list[str]:
@@ -114,13 +134,7 @@ def _log_lines(snapshot: Snapshot, result: PlanResult, mode: str) -> list[str]:
     for item in result.changes:
         grouped.setdefault(item.task_id, []).append(item)
     for task_id, items in grouped.items():
-        fields = "; ".join(
-            f"{NOTION_NAMES[i.field]} {_show(i.old)} → {_show(i.new)}" for i in items
-        )
-        reasons = "; ".join(dict.fromkeys(i.reason for i in items))
-        lines.append(
-            f"- {_log_title(tasks.get(task_id), task_id, items)}: {fields} ({reasons})"
-        )
+        lines.append(_log_line(_log_title(tasks.get(task_id), task_id, items), items))
     if not result.changes:
         lines.append("- No task changes")
     lines.append("## Calendar")

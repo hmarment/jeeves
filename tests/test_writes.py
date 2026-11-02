@@ -184,16 +184,31 @@ def test_log_has_one_line_per_task_with_old_and_new():
         ],
     )
     assert lines[1] == (
-        "- Alpha: Size – → M; Area – → Work; Due 2026-10-01 → 2026-10-07 "
+        "- Alpha: Size → M; Area → Work; Due 2026-10-01 → 2026-10-07 "
         "(inferred; soft date passed)"
     )
     assert lines[2] == "## Calendar"
 
 
+def test_log_omits_reason_when_every_change_is_an_inferred_fill():
+    snapshot = make_snapshot([make_task("a", title="Alpha")])
+    lines = _body(snapshot, [change("a", "size", None, "M", "inferred")])
+    assert lines[1] == "- Alpha: Size → M"
+
+
+def test_log_shortens_long_titles():
+    title = "JIRA | ASQ-1 - " + "very long title " * 5
+    snapshot = make_snapshot([make_task("a", title=title)])
+    lines = _body(snapshot, [change("a", "size", None, "M", "inferred")])
+    name = lines[1].removeprefix("- ").split(": Size")[0]
+    assert len(name) <= 50
+    assert name.endswith("…")
+
+
 def test_log_hides_confidential_titles():
     snapshot = make_snapshot([make_task("c", title="Comp band", confidential=True)])
     lines = _body(snapshot, [change("c", "size", None, "S", "inferred")])
-    assert lines[1] == "- 🔒 confidential task: Size – → S (inferred)"
+    assert lines[1] == "- 🔒 confidential task: Size → S"
 
 
 def test_log_hides_title_of_task_inferred_confidential():

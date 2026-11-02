@@ -33,7 +33,8 @@ via the Slack DM below. Never print secrets. Never commit or push.
       Notion URL unless `private` is true), and `visibility: private` when `private` is true.
 8. Call `apply_writes` with `plan_writes` (one call), exactly as `jeeves writes` produced
    it: never shorten, summarise or rewrite `body_lines` — the body is the change log and
-   the only undo record. If that call errors or the payload would be truncated, split it:
+   the only undo record. A body of 100+ lines is normal; its length is not a reason to
+   omit lines. If that call errors or the payload would be truncated, split it:
    send the row `create` without `body_lines` (or the `update` alone); then
    `{"op":"replace_body","page_id":<the page_id the create returned, or the existing row
    id>,"body_lines":<the unchanged lines>}` as its own call; then any remaining
