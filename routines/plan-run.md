@@ -38,9 +38,14 @@ via the Slack DM below. Never print secrets. Never commit or push.
    send the row `create` without `body_lines` (or the `update` alone); then
    `{"op":"replace_body","page_id":<the page_id the create returned, or the existing row
    id>,"body_lines":<the unchanged lines>}` as its own call; then any remaining
-   `plan_writes` items unchanged. If the Daily Plan row `create` (or
-   its `update`) itself failed, go to **Failure**. Otherwise, if any task, calendar or body
-   write failed, follow with an `update` of today's Daily Plan row with properties
+   `plan_writes` items unchanged. A timeout or "Service Unavailable" on the body can still
+   have written it: before treating it as failed, read the row back (`jeeves_page_text` on
+   its id); if the text starts with the first line of `body_lines`, the body is there and
+   is not a failure. Never abridge the body by hand, for any reason; if it is genuinely
+   missing after one identical retry, leave it missing and report that. If the Daily Plan row
+   `create` (or its `update`) itself failed, go to **Failure**. Otherwise, if any task,
+   calendar or body write failed (and the read-back did not find the body), follow with an
+   `update` of today's Daily Plan row with properties
    `{"Run status": {"select": {"name": "Degraded"}}, "Run note": {"rich_text": [{"text":
    {"content": "<one-line summary of the failures>"}}]}}`.
 9. If `status` is `planned`, send the DM (below) with `dm_text`, then a blank line and the

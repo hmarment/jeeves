@@ -1,3 +1,4 @@
+from collections import Counter
 from datetime import date
 from typing import Any
 
@@ -47,6 +48,7 @@ PROPERTY_TYPES = {
 }
 BATCH_SIZE = 10
 TITLE_LIMIT = 50
+FILL_ITEMISE_LIMIT = 20
 
 
 def _value(value: Any) -> Any:
@@ -122,6 +124,16 @@ def _log_line(title: str, items: list[FieldChange]) -> str:
     return f"- {title}: {fields} ({'; '.join(reasons)})"
 
 
+def _is_pure_fill(items: list[FieldChange]) -> bool:
+    return all(i.reason == "inferred" and i.old is None for i in items)
+
+
+def _fill_summary(fills: list[list[FieldChange]]) -> str:
+    counts = Counter(_log_change(i) for items in fills for i in items)
+    parts = "; ".join(f"{label} ×{n}" for label, n in sorted(counts.items()))
+    return f"- {len(fills)} tasks filled in (empty before, not itemised): {parts}"
+
+
 def _when(due: date, today: date) -> str:
     days = (due - today).days
     if days == 0:
@@ -173,8 +185,14 @@ def _log_lines(snapshot: Snapshot, result: PlanResult, mode: str) -> list[str]:
     grouped: dict[str, list[FieldChange]] = {}
     for item in result.changes:
         grouped.setdefault(item.task_id, []).append(item)
+    fills = [items for items in grouped.values() if _is_pure_fill(items)]
+    collapse = len(fills) > FILL_ITEMISE_LIMIT
     for task_id, items in grouped.items():
+        if collapse and _is_pure_fill(items):
+            continue
         lines.append(_log_line(_log_title(tasks.get(task_id), task_id, items), items))
+    if collapse:
+        lines.append(_fill_summary(fills))
     if not result.changes:
         lines.append("- No task changes")
     lines.extend(_birthday_lines(snapshot, result, tasks))

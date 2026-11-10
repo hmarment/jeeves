@@ -266,3 +266,37 @@ def test_body_lists_lunch_errands():
     out = build_writes(snapshot, result, {"pages": []}, "db", "auto")
     lines = out["plan_writes"][0]["body_lines"]
     assert lines[lines.index("## Lunch errands") + 1] == "- Return parcel"
+
+
+def test_many_pure_fills_collapse_into_one_summary_line():
+    tasks = [make_task(f"t{i}", title=f"Task {i}") for i in range(30)]
+    changes = [change(f"t{i}", "size", None, "M", "inferred") for i in range(30)]
+    changes += [change(f"t{i}", "area", None, "Work", "inferred") for i in range(30)]
+    changes.append(change("t0", "due", date(2026, 10, 1), TODAY, "soft date passed"))
+    lines = _body(make_snapshot(tasks), changes)
+    assert lines[1] == (
+        "- Task 0: Size → M; Area → Work; Due 2026-10-01 → 2026-10-07 "
+        "(inferred; soft date passed)"
+    )
+    assert lines[2] == (
+        "- 29 tasks filled in (empty before, not itemised): Area → Work ×29; Size → M ×29"
+    )
+    assert lines[3] == "## Calendar"
+
+
+def test_few_pure_fills_stay_itemised():
+    tasks = [make_task(f"t{i}", title=f"Task {i}") for i in range(3)]
+    changes = [change(f"t{i}", "size", None, "M", "inferred") for i in range(3)]
+    lines = _body(make_snapshot(tasks), changes)
+    assert lines[1:4] == [f"- Task {i}: Size → M" for i in range(3)]
+
+
+def test_inferred_confidential_flags_are_never_collapsed():
+    tasks = [make_task(f"t{i}", title=f"Task {i}", size=None) for i in range(30)]
+    changes = [change(f"t{i}", "size", None, "M", "inferred") for i in range(30)]
+    changes.append(
+        change("t5", "confidential", False, True, "inferred: likely sensitive")
+    )
+    lines = _body(make_snapshot(tasks), changes)
+    assert any(line.startswith("- 🔒 confidential task:") for line in lines)
+    assert "- 29 tasks filled in" in "\n".join(lines)
